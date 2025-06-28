@@ -12,7 +12,7 @@ import (
 
 func init() {
 	migration.RegisterMigration("samanbank_models", func(m gorm.Migrator) error {
-		return m.AutoMigrate(BankSepTerminal{})
+		return m.AutoMigrate(BankSepTerminal{}, BankSepTransaction{})
 	})
 
 	registry.RegisterBank("saman", func(g fiber.Router) {

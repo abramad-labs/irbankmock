@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "qwtel.sqlite-viewer",
+        "bruno-api-client.bruno",
+        "dbaeumer.vscode-eslint",
+        "golang.go"
+    ]
+}

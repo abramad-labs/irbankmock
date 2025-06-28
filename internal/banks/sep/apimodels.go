@@ -1,14 +1,5 @@
 package sep
 
-// A terminal/merchant is an entity who is providing services to a customer,
-// registered in bank's database.
-type BankSepTerminal struct {
-	ID       uint64 `gorm:"primarykey"`
-	Name     string
-	Username string
-	Password string
-}
-
 type BankSepGetTerminalsResponse struct {
 	Terminals []BankSepTerminal `json:"terminals"`
 }

@@ -17,7 +17,8 @@ Coming
 ## Sqlite Notice
 
 We decided to use `github.com/glebarez/sqlite` instead of `gorm.io/driver/sqlite`. The trade-off 
-was to lose a little bit of performance to gain a `cgo`-free package.
+was to lose a little bit of performance to gain a `cgo`-free package. 
+This also enabled us to use `distroless/static` instead of `distroless/base`.
 
 Read more:
 
