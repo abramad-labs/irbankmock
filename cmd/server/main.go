@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/abramad-labs/irbankmock/internal/banks"
 	"github.com/abramad-labs/irbankmock/internal/banks/registry"
+	_ "go.uber.org/automaxprocs"
 
 	"github.com/abramad-labs/irbankmock/internal/conf"
 	"github.com/abramad-labs/irbankmock/internal/dbutils"
