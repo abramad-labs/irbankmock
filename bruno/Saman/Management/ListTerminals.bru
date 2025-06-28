@@ -1,0 +1,11 @@
+meta {
+  name: ListTerminals
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/api/saman/management/terminal
+  body: none
+  auth: none
+}

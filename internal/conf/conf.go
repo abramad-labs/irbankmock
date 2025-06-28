@@ -52,3 +52,9 @@ func ShouldAutoMigrate() bool {
 	}
 	return val
 }
+
+func IsGormLogDisabled() bool {
+	env := os.Getenv("IRBANKMOCK_DISABLE_GORM_LOG")
+	val, _ := strconv.ParseBool(env)
+	return val
+}

@@ -1,39 +1,59 @@
 package sep
 
 import (
-	"strconv"
+	"errors"
+	"strings"
 
-	"github.com/abramad-labs/irbankmock/internal/banks/registry"
-	"github.com/abramad-labs/irbankmock/internal/banks/sep/seperrors"
-	"github.com/abramad-labs/irbankmock/internal/dbutils/migration"
+	"github.com/abramad-labs/irbankmock/internal/dbutils"
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
+	"github.com/google/uuid"
 )
 
-func init() {
-	migration.RegisterMigration("samanbank_models", func(m gorm.Migrator) error {
-		return m.AutoMigrate(BankSepTerminal{})
-	})
+func getTerminals(ctx *fiber.Ctx) (*BankSepGetTerminalsResponse, error) {
+	db, err := dbutils.GetDb(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	registry.RegisterBank("saman", func(g fiber.Router) {
-		g.Post(BankSepPathOnlinePaymentGateway, func(c *fiber.Ctx) error {
-			var txReq BankSepTransactionRequest
-			err := c.BodyParser(&txReq)
-			if err != nil {
-				return c.JSON(BankSepTransactionResponse{
-					Status:    -1,
-					ErrorCode: strconv.Itoa(seperrors.GetBankSepErrorCode(seperrors.ErrTerminalNotFound)),
-					ErrorDesc: err.Error(),
-				})
-			}
-			return c.JSON(txReq)
-		})
-	})
+	var terminals []BankSepTerminal
+
+	err = db.Find(&terminals).Error
+	if err != nil {
+		return nil, errors.New("failed to fetch terminals")
+	}
+
+	resp := &BankSepGetTerminalsResponse{
+		Terminals: terminals,
+	}
+	return resp, nil
 }
 
-const BankSepPathOnlinePaymentGateway = "/OnlinePG/OnlinePG"
-const BankSepPathOnlinePaymenyTokenRedirect = "/OnlinePG/SendToken"
+func createTerminal(ctx *fiber.Ctx, req *BankSepCreateTerminalRequest) (*BankSepCreateTerminalResponse, error) {
+	db, err := dbutils.GetDb(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-const BankSepPathGetReceipt = "/verifyTxnRandomSessionkey/api/v2/ipg/payment/receipt"
-const BankSepPathVerifyTransaction = "/verifyTxnRandomSessionkey/ipg/VerifyTransaction"
-const BankSepPathReverseTransaction = "/verifyTxnRandomSessionkey/ipg/ReverseTransaction"
+	if strings.TrimSpace(req.Name) == "" {
+		return nil, errors.New("name can't be empty")
+	}
+
+	username := uuid.NewString()
+	password := uuid.NewString()
+	model := &BankSepTerminal{
+		Name:     req.Name,
+		Username: username,
+		Password: password,
+	}
+
+	err = db.Create(&model).Error
+	if err != nil {
+		return nil, errors.New("failed to add terminal")
+	}
+	return &BankSepCreateTerminalResponse{
+		ID:       model.ID,
+		Name:     model.Name,
+		Username: model.Username,
+		Password: model.Password,
+	}, nil
+}

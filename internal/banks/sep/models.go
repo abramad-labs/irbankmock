@@ -4,8 +4,29 @@ package sep
 // registered in bank's database.
 type BankSepTerminal struct {
 	ID       uint64 `gorm:"primarykey"`
+	Name     string
 	Username string
 	Password string
+}
+
+type BankSepGetTerminalsResponse struct {
+	Terminals []BankSepTerminal `json:"terminals"`
+}
+
+type BankSepCreateTerminalRequest struct {
+	Name string
+}
+
+type BankSepCreateTerminalResponse struct {
+	ID       uint64
+	Name     string
+	Username string
+	Password string
+}
+
+type BankSepManagementError struct {
+	Error   bool
+	Message string
 }
 
 type BankSepTransactionRequest struct {
