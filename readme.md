@@ -6,10 +6,6 @@ A service for testing Iranian banks internet payment gateways.
 
 This service currently only supports Saman Bank (SEP).
 
-## Build
-
-You need CGO enabled for this project to build `CGO_ENABLED=1`
-
 ## Configuration
 
 Visit [conf.go](./internal/conf/conf.go) to see which environment variables are supported.
