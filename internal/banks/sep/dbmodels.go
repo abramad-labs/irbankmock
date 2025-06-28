@@ -13,14 +13,14 @@ type BankSepTransaction struct {
 	ID uint64 `gorm:"primarykey"`
 
 	// the merchant/termianl ID
-	TerminalId uint64          `gorm:"uniqueIndex:terminal_resnum_idx"`
+	TerminalId uint64          `gorm:"index:,unique,composite:terminal_resnum_idx"`
 	Terminal   BankSepTerminal `gorm:"foreignKey:TerminalId"`
 
 	// amount of payment in IRR
 	Amount int64
 
 	// a unique number generated in merchant side to prevent double-spending and can be used for inquery
-	ResNum string `gorm:"uniqueIndex:terminal_resnum_idx"`
+	ResNum string `gorm:"index:,unique,composite:terminal_resnum_idx"`
 
 	// where to redirect the buyer after the transaction finished
 	RedirectURL string
