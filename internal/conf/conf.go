@@ -1,0 +1,54 @@
+package conf
+
+import (
+	"fmt"
+	"os"
+	"path"
+	"strconv"
+)
+
+func GetDataPath() string {
+	env := os.Getenv("IRBANKMOCK_DATA_PATH")
+
+	if env == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "."
+		}
+		return cwd
+	}
+
+	return env
+}
+
+func GetDbFileName() string {
+	env := os.Getenv("IRBANKMOCK_DB_NAME")
+	if env == "" {
+		return "irbankmock.db"
+	}
+	return env
+}
+
+func GetDbPath() string {
+	return path.Join(GetDataPath(), GetDbFileName())
+}
+
+func GetListenAddress() string {
+	env := os.Getenv("IRBANKMOCK_SERVER_PORT")
+	if env == "" {
+		return ":3000"
+	}
+	return env
+}
+
+func ShouldAutoMigrate() bool {
+	env := os.Getenv("IRBANKMOCK_AUTOMIGRATE")
+	val, err := strconv.ParseBool(env)
+	if err != nil {
+		if env != "" {
+			fmt.Println("invalid value for IRBANKMOCK_AUTOMIGRATE value, falling-back to default=true")
+		}
+		return true
+	}
+	return val
+}

@@ -1,0 +1,17 @@
+meta {
+  name: TransactionRequest
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/api/saman/OnlinePG/OnlinePG
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "action": "test"
+  }
+}

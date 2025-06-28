@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "IrBankMock",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
