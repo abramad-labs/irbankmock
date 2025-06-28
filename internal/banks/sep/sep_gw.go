@@ -40,17 +40,10 @@ const BankSepPathGetReceipt = "/verifyTxnRandomSessionkey/api/v2/ipg/payment/rec
 const BankSepPathVerifyTransaction = "/verifyTxnRandomSessionkey/ipg/VerifyTransaction"
 const BankSepPathReverseTransaction = "/verifyTxnRandomSessionkey/ipg/ReverseTransaction"
 
-func BadRequestManagement(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusBadRequest).JSON(BankSepManagementError{
-		Error:   true,
-		Message: message,
-	})
-}
-
 func GetTerminals(c *fiber.Ctx) error {
 	resp, err := getTerminals(c)
 	if err != nil {
-		return BadRequestManagement(c, err.Error())
+		return err
 	}
 	return c.JSON(resp)
 }
@@ -59,12 +52,12 @@ func CreateTerminal(c *fiber.Ctx) error {
 	req := new(BankSepCreateTerminalRequest)
 	err := c.BodyParser(req)
 	if err != nil {
-		return BadRequestManagement(c, err.Error())
+		return err
 	}
 
 	resp, err := createTerminal(c, req)
 	if err != nil {
-		return BadRequestManagement(c, err.Error())
+		return err
 	}
 
 	return c.JSON(resp)

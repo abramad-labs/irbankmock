@@ -2,9 +2,12 @@ package sep
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/abramad-labs/irbankmock/internal/banks/sep/managementerrors"
 	"github.com/abramad-labs/irbankmock/internal/dbutils"
+	"github.com/abramad-labs/irbankmock/internal/usererror"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -35,7 +38,7 @@ func createTerminal(ctx *fiber.Ctx, req *BankSepCreateTerminalRequest) (*BankSep
 	}
 
 	if strings.TrimSpace(req.Name) == "" {
-		return nil, errors.New("name can't be empty")
+		return nil, usererror.NewBadRequest(managementerrors.ErrEmptyName)
 	}
 
 	username := uuid.NewString()
@@ -48,7 +51,7 @@ func createTerminal(ctx *fiber.Ctx, req *BankSepCreateTerminalRequest) (*BankSep
 
 	err = db.Create(&model).Error
 	if err != nil {
-		return nil, errors.New("failed to add terminal")
+		return nil, fmt.Errorf("failed creating terminal: %w", err)
 	}
 	return &BankSepCreateTerminalResponse{
 		ID:       model.ID,

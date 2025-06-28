@@ -5,12 +5,15 @@ import (
 
 	_ "github.com/abramad-labs/irbankmock/internal/banks"
 	"github.com/abramad-labs/irbankmock/internal/banks/registry"
+	fibererror "github.com/abramad-labs/irbankmock/internal/usererror/fiber"
 	_ "go.uber.org/automaxprocs"
 
 	"github.com/abramad-labs/irbankmock/internal/conf"
 	"github.com/abramad-labs/irbankmock/internal/dbutils"
 	"github.com/abramad-labs/irbankmock/internal/dbutils/migration"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 )
 
 func main() {
@@ -29,16 +32,16 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		CaseSensitive: false,
+		ErrorHandler:  fibererror.FiberUserErrorHandling,
 	})
 	app.Use(func(c *fiber.Ctx) error {
 		c = dbutils.ContextWithDb(c, db)
 		return c.Next()
 	})
-
-	app.Get("/lol", func(c *fiber.Ctx) error {
-		c.JSON(c.App().Config())
-		return nil
-	})
+	app.Use(requestid.New())
+	app.Use(logger.New(logger.Config{
+		Format: "${locals:requestid} ${status} - ${method} ${path}\u200b\n",
+	}))
 
 	registry.ConfigAppRouters(app)
 
