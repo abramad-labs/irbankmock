@@ -25,13 +25,23 @@ type BankSepTransactionRequest struct {
 	Action string `json:"action"`
 
 	// the merchant/termianl ID
-	TerminalId int64 `json:"terminalId"`
+	TerminalId uint64 `json:"terminalId"`
 
 	// amount of payment in IRR
-	Amount int64 `json:"amount"`
+	Amount uint64 `json:"amount"`
 
-	// a unique number generated in merchant side to prevent double-spending and can be used for inquery
+	// reservation number is a unique number generated in merchant side to
+	// prevent double-spending and can be used for inquery
 	ResNum string `json:"resNum"`
+
+	// optional resnum, used for reporting
+	ResNum1 *string `json:"resNum1"`
+	// optional resnum, used for reporting
+	ResNum2 *string `json:"resNum2"`
+	// optional resnum, used for reporting
+	ResNum3 *string `json:"resNum3"`
+	// optional resnum, used for reporting
+	ResNum4 *string `json:"resNum4"`
 
 	// where to redirect the buyer after the transaction finished
 	RedirectURL string `json:"redirectURL"`
@@ -50,7 +60,10 @@ type BankSepTransactionRequest struct {
 	// validity duration of this token in range 20 to 3600 minutes
 	TokenExpiryInMin int `json:"tokenExpiryInMin"`
 
-	// optional hash of the card number. irbankmock ignores this value.
+	// optional md5 hash of the card number for input and sha256 for output.
+	// forces user to pick these cards only.
+	// separate with one of the |;, characters to send multiple hashes.
+	// maximum 10 cards allowed.
 	HashedCardNumber *string `json:"hashedCardNumber,omitempty"`
 
 	// if provided, you should pass this key to be able to receive the receipt

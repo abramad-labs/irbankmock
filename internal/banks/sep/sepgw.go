@@ -10,6 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
+const BankSepPathOnlinePaymentGateway = "/OnlinePG/OnlinePG"
+const BankSepPathOnlinePaymenyTokenRedirect = "/OnlinePG/SendToken"
+
+const BankSepPathGetReceipt = "/verifyTxnRandomSessionkey/api/v2/ipg/payment/receipt"
+const BankSepPathVerifyTransaction = "/verifyTxnRandomSessionkey/ipg/VerifyTransaction"
+const BankSepPathReverseTransaction = "/verifyTxnRandomSessionkey/ipg/ReverseTransaction"
+
 func init() {
 	migration.RegisterMigration("samanbank_models", func(m gorm.Migrator) error {
 		return m.AutoMigrate(BankSepTerminal{}, BankSepTransaction{})
@@ -18,27 +25,9 @@ func init() {
 	registry.RegisterBank("saman", func(g fiber.Router) {
 		g.Post("/management/terminal", CreateTerminal)
 		g.Get("/management/terminal", GetTerminals)
-		g.Post(BankSepPathOnlinePaymentGateway, func(c *fiber.Ctx) error {
-			var txReq BankSepTransactionRequest
-			err := c.BodyParser(&txReq)
-			if err != nil {
-				return c.JSON(BankSepTransactionResponse{
-					Status:    -1,
-					ErrorCode: strconv.Itoa(seperrors.GetBankSepErrorCode(seperrors.ErrTerminalNotFound)),
-					ErrorDesc: err.Error(),
-				})
-			}
-			return c.JSON(txReq)
-		})
+		g.Post(BankSepPathOnlinePaymentGateway, PaymentGwTransaction)
 	})
 }
-
-const BankSepPathOnlinePaymentGateway = "/OnlinePG/OnlinePG"
-const BankSepPathOnlinePaymenyTokenRedirect = "/OnlinePG/SendToken"
-
-const BankSepPathGetReceipt = "/verifyTxnRandomSessionkey/api/v2/ipg/payment/receipt"
-const BankSepPathVerifyTransaction = "/verifyTxnRandomSessionkey/ipg/VerifyTransaction"
-const BankSepPathReverseTransaction = "/verifyTxnRandomSessionkey/ipg/ReverseTransaction"
 
 func GetTerminals(c *fiber.Ctx) error {
 	resp, err := getTerminals(c)
@@ -60,5 +49,26 @@ func CreateTerminal(c *fiber.Ctx) error {
 		return err
 	}
 
+	return c.JSON(resp)
+}
+
+func sendJsonFromSamanError(c *fiber.Ctx, err error, status int) error {
+	return c.Status(status).JSON(BankSepTransactionResponse{
+		Status:    -1,
+		ErrorCode: strconv.Itoa(seperrors.GetBankSepErrorCode(err)),
+		ErrorDesc: err.Error(),
+	})
+}
+
+func PaymentGwTransaction(c *fiber.Ctx) error {
+	txReq := new(BankSepTransactionRequest)
+	err := c.BodyParser(txReq)
+	if err != nil {
+		return sendJsonFromSamanError(c, seperrors.ErrXInvalidRequest, fiber.StatusBadRequest)
+	}
+	resp, err := processTransactionRequest(c, txReq)
+	if err != nil {
+		return sendJsonFromSamanError(c, err, fiber.StatusBadRequest)
+	}
 	return c.JSON(resp)
 }
