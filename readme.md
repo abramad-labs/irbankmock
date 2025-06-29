@@ -14,6 +14,11 @@ Visit [conf.go](./internal/conf/conf.go) to see which environment variables are 
 
 Coming
 
+## Security Considerations
+
+This is a lightweight service used for testing purposes only, hence there is no authentication and 
+banking security protocols and mechanisms. Do not expose this service into to the wilderness.
+
 ## Sqlite Notice
 
 We decided to use `github.com/glebarez/sqlite` instead of `gorm.io/driver/sqlite`. The trade-off 
