@@ -24,3 +24,11 @@ Read more:
 
 - [cgo is not go](https://dave.cheney.net/2016/01/18/cgo-is-not-go)
 - [SQLite in Go, with and without cgo](https://datastation.multiprocess.io/blog/2022-05-12-sqlite-in-go-with-and-without-cgo.html)
+
+## Specification
+
+### Saman Electronic Payment (SEP)
+
+Implemented based on [SEP_OnlinePG_Merchant Document_Minimal_Current.pdf](./docs/SEP_OnlinePG_Merchant%20Document_Minimal_Current.pdf)
+
+It's a terrible documentation, I know...
