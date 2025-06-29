@@ -105,6 +105,7 @@ func processTransactionRequest(ctx *fiber.Ctx, req *BankSepTransactionRequest) (
 	now := time.Now()
 
 	token := uuid.NewString()
+	refNum := uuid.NewString()
 
 	trxModel := &BankSepTransaction{
 		TerminalId:          req.TerminalId,
@@ -125,6 +126,8 @@ func processTransactionRequest(ctx *fiber.Ctx, req *BankSepTransactionRequest) (
 		ExpiresAt:           now.Add(time.Duration(req.TokenExpiryInMin) * time.Minute),
 		Token:               token,
 		Verified:            false,
+		ReceiptExpiresAt:    now.Add(time.Hour),
+		RefNum:              refNum,
 	}
 
 	err = db.Create(&trxModel).Error
@@ -133,7 +136,7 @@ func processTransactionRequest(ctx *fiber.Ctx, req *BankSepTransactionRequest) (
 	}
 
 	return &BankSepTransactionResponse{
-		Token:  token,
 		Status: 1,
+		Token:  token,
 	}, nil
 }

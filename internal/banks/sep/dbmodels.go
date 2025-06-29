@@ -65,11 +65,28 @@ type BankSepTransaction struct {
 
 	Token string
 
+	// reference number used for validation and verification of transaction
+	RefNum string
+
 	Verified bool
 
 	CreatedAt time.Time
 
 	// this transaction will be invalidated due this time.
 	// calculated using created_at + token_expiry_in_min
+	ExpiresAt time.Time
+
+	ReceiptExpiresAt time.Time
+}
+
+type BankSepTranasctionReceipt struct {
+	ID uint64 `gorm:"primarykey"`
+
+	TransactionId uint64
+	Transaction   BankSepTransaction `gorm:"foreignKey:TransactionId"`
+
+	Verified bool
+
+	CreatedAt time.Time
 	ExpiresAt time.Time
 }
