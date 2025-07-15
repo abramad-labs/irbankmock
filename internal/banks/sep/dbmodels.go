@@ -65,10 +65,14 @@ type BankSepTransaction struct {
 
 	Token string
 
+	TraceNo uint64
+
 	// reference number used for validation and verification of transaction
 	RefNum string
 
 	Verified bool
+
+	Status PaymentReceiptStatus
 
 	CreatedAt time.Time
 

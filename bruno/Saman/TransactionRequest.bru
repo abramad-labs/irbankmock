@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/api/saman/OnlinePG/OnlinePG
+  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/banks/saman/OnlinePG/OnlinePG
   body: json
   auth: none
 }
@@ -16,7 +16,7 @@ body:json {
     "terminalId": 1,
     "amount": 10000,
     "resNum": "some-res-num",
-    "redirectUrl": "https://localhost:3000/api/saman/redirect",
+    "redirectUrl": "https://localhost:3000/banks/saman/redirect",
     "tokenExpiryInMin": 20
   }
 }

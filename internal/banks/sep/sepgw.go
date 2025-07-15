@@ -64,7 +64,8 @@ func sendJsonFromSamanError(c *fiber.Ctx, err error, status int) error {
 func PaymentGwTransaction(c *fiber.Ctx) error {
 	tokenValue := c.FormValue("Token")
 	if tokenValue != "" {
-		target := "/api/saman" + BankSepPathOnlinePaymenyTokenRedirect + "?token=" + url.QueryEscape(tokenValue)
+		routerPrefix := registry.GetRouterPrefix(c)
+		target := routerPrefix + BankSepPathOnlinePaymenyTokenRedirect + "?token=" + url.QueryEscape(tokenValue)
 		return c.Redirect(target, fiber.StatusTemporaryRedirect)
 	}
 	txReq := new(BankSepTransactionRequest)

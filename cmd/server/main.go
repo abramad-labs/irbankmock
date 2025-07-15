@@ -34,6 +34,10 @@ func main() {
 		CaseSensitive: false,
 		ErrorHandler:  fibererror.FiberUserErrorHandling,
 	})
+
+	app.Static("/", conf.GetWebAppPath(), fiber.Static{
+		Browse: false,
+	})
 	app.Use(func(c *fiber.Ctx) error {
 		c = dbutils.ContextWithDb(c, db)
 		return c.Next()

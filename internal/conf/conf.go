@@ -58,3 +58,11 @@ func IsGormLogDisabled() bool {
 	val, _ := strconv.ParseBool(env)
 	return val
 }
+
+func GetWebAppPath() string {
+	env := os.Getenv("IRBANKMOCK_WEBAPP_PATH")
+	if env == "" {
+		return "./web/app/out"
+	}
+	return env
+}
