@@ -16,8 +16,8 @@ Coming
 
 ## Security Considerations
 
-This is a lightweight service used for testing purposes only, hence there is no authentication and 
-banking security protocols and mechanisms. Do not expose this service into to the wilderness.
+This is a lightweight service used for testing purposes only. This is why there is no authentication or 
+banking security protocols invloved. Do not expose this service into to the wilderness.
 
 ## Sqlite Notice
 
@@ -29,6 +29,12 @@ Read more:
 
 - [cgo is not go](https://dave.cheney.net/2016/01/18/cgo-is-not-go)
 - [SQLite in Go, with and without cgo](https://datastation.multiprocess.io/blog/2022-05-12-sqlite-in-go-with-and-without-cgo.html)
+
+
+## Debugging
+
+1. Run go server with `go run .\cmd\server\main.go`
+2. Go to webapp directory and run the dev server: `cd .\web\app` and `bun run dev`
 
 ## Specification
 

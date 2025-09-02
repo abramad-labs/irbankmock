@@ -36,10 +36,27 @@ func FiberUserErrorHandling(c *fiber.Ctx, err error) error {
 	}
 	errUuid := uuid.NewString()
 	log.Errorf("server error [%s]: %s", errUuid, err.Error())
-	return c.Status(fiber.StatusInternalServerError).JSON(&NonUserErrorResponse{
+
+	code := fiber.StatusInternalServerError
+	message := ""
+	var e *fiber.Error
+	if errors.As(err, &e) {
+		code = e.Code
+		message = e.Message
+	}
+	c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
+
+	var responseError string
+	if message == "" {
+		responseError = fmt.Sprintf("Server error. Error id: %s", errUuid)
+	} else {
+		responseError = message
+	}
+
+	return c.Status(code).JSON(&NonUserErrorResponse{
 		Success:   false,
 		ErrorId:   errUuid,
-		Error:     fmt.Sprintf("Server error. Error id: %s", errUuid),
+		Error:     responseError,
 		RequestId: c.Locals("requestid").(string),
 	})
 }

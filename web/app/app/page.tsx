@@ -29,7 +29,7 @@ export default function Home() {
                                 <Card.Footer>
                                     <Button asChild>
                                         <ChakraLink asChild>
-                                            <Link href="/banks/saman/manage">Manage</Link>
+                                            <Link href="/banks/saman/management">Manage</Link>
                                         </ChakraLink>
                                     </Button>
                                 </Card.Footer>

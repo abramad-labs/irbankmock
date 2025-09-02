@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"sort"
+	"text/tabwriter"
 
 	_ "github.com/abramad-labs/irbankmock/internal/banks"
 	"github.com/abramad-labs/irbankmock/internal/banks/registry"
@@ -47,11 +51,40 @@ func main() {
 		Format: "${locals:requestid} ${status} - ${method} ${path}\u200b\n",
 	}))
 
-	registry.ConfigAppRouters(app)
+	rootGroup := app.Group("/")
+	registry.ConfigAppRouters(rootGroup.(*fiber.Group))
 
+	PrintAllRoutes(app)
 	listenaddr := conf.GetListenAddress()
 	err = app.Listen(listenaddr)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func PrintAllRoutes(app *fiber.App) {
+	routes := app.GetRoutes()
+
+	pathMap := make(map[string][]string)
+	for _, r := range routes {
+		pathMap[r.Path] = append(pathMap[r.Path], r.Method)
+	}
+
+	paths := make([]string, 0, len(pathMap))
+	for p := range pathMap {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Println()
+	fmt.Fprintln(w, "PATH\tMETHODS")
+
+	for _, p := range paths {
+		methods := pathMap[p]
+		sort.Strings(methods)
+		fmt.Fprintf(w, "%s\t%s\n", p, methods)
+	}
+
+	w.Flush()
 }

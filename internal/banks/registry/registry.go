@@ -26,7 +26,7 @@ func Cleanup() {
 	banks = nil
 }
 
-func ConfigAppRouters(app *fiber.App) {
+func ConfigAppRouters(app *fiber.Group) {
 	for _, entry := range banks {
 		grpPath := "/banks/" + entry.Name
 		grp := app.Group(grpPath)

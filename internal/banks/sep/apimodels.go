@@ -5,14 +5,14 @@ type BankSepGetTerminalsResponse struct {
 }
 
 type BankSepCreateTerminalRequest struct {
-	Name string
+	Name string `json:"name"`
 }
 
 type BankSepCreateTerminalResponse struct {
-	ID       uint64
-	Name     string
-	Username string
-	Password string
+	ID       uint64 `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type BankSepManagementError struct {
