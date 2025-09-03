@@ -20,12 +20,15 @@ const BankSepPathReverseTransaction = "/verifyTxnRandomSessionkey/ipg/ReverseTra
 
 func init() {
 	migration.RegisterMigration("samanbank_models", func(m gorm.Migrator) error {
-		return m.AutoMigrate(BankSepTerminal{}, BankSepTransaction{})
+		return m.AutoMigrate(BankSepTerminal{}, BankSepTransaction{}, &BankSepTransactionReceipt{})
 	})
 
 	registry.RegisterBank("saman", func(g fiber.Router) {
 		g.Post("/management/terminal", CreateTerminal)
 		g.Get("/management/terminal", GetTerminals)
+		g.Get("/management/public/token", GetTokenInfo)
+		g.Post("/management/token/submit", SubmitToken)
+		g.Post("/management/token/cancel", CancelToken)
 		g.Post(BankSepPathOnlinePaymentGateway, PaymentGwTransaction)
 	})
 }
@@ -78,4 +81,21 @@ func PaymentGwTransaction(c *fiber.Ctx) error {
 		return sendJsonFromSamanError(c, err, fiber.StatusBadRequest)
 	}
 	return c.JSON(resp)
+}
+
+func GetTokenInfo(c *fiber.Ctx) error {
+	tokenValue := c.Query("token")
+	resp, err := getPublicTokenInfo(c, tokenValue)
+	if err != nil {
+		return err
+	}
+	return c.JSON(resp)
+}
+
+func SubmitToken(c *fiber.Ctx) error {
+	return nil
+}
+
+func CancelToken(c *fiber.Ctx) error {
+	return nil
 }

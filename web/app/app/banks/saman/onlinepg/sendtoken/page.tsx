@@ -1,5 +1,7 @@
 "use client";
 
+import { fetcherWithError, ResponseError } from "@/lib/fetcher";
+import { SamanPublicTokenInfoResponse, SuccessErrorPair } from "@/types/banks/saman/types";
 import {
     Box,
     Container,
@@ -10,10 +12,43 @@ import {
     Text,
     HStack,
     Button,
+    ProgressCircle,
+    EmptyState,
 } from "@chakra-ui/react";
-import { ChangeEventHandler, EventHandler, useState } from "react";
+import { intervalToDuration, parseISO } from "date-fns";
+import { useSearchParams } from "next/navigation";
+import { ChangeEventHandler, useEffect, useState } from "react";
+import { MdOutlineMoneyOff } from "react-icons/md";
+import useSWR from "swr";
+
+const InvalidPayment = (props: { title: string; description: string }) => {
+    return (
+        <EmptyState.Root size="lg">
+            <EmptyState.Content>
+                <EmptyState.Indicator>
+                    <MdOutlineMoneyOff />
+                </EmptyState.Indicator>
+                <VStack textAlign="center">
+                    <EmptyState.Title>{props.title}</EmptyState.Title>
+                    <EmptyState.Description>
+                        {props.description}
+                    </EmptyState.Description>
+                </VStack>
+            </EmptyState.Content>
+        </EmptyState.Root>
+    );
+};
 
 export default function Home() {
+    const searchParams = useSearchParams()
+    const token = searchParams.get("token") ?? ""
+    const { data, error, isLoading, mutate } =
+        useSWR<SamanPublicTokenInfoResponse, ResponseError<SuccessErrorPair>>(
+            `/banks/saman/management/public/token/?token=${encodeURIComponent(
+                token
+            )}`,
+            fetcherWithError
+        );
     const [formData, setFormData] = useState({
         cardNumber: "",
         cvv: "",
@@ -42,6 +77,55 @@ export default function Home() {
             cardPassword: "",
         });
     };
+
+
+ const [remaining, setRemaining] = useState("");
+
+  useEffect(() => {
+    if(!data?.expiresAt)
+        return
+
+    const target = parseISO(data?.expiresAt);
+
+    function update() {
+      const now = new Date();
+      if (now >= target) {
+        setRemaining("00:00");
+        mutate()
+        return;
+      }
+
+      const dur = intervalToDuration({ start: now, end: target });
+      const mm = String((dur.hours || 0) * 60 + (dur.minutes || 0)).padStart(2, "0");
+      const ss = String(dur.seconds || 0).padStart(2, "0");
+      setRemaining(`${mm}:${ss}`);
+    }
+
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [data?.expiresAt]);
+
+    if (token === "")
+        return (
+            <InvalidPayment
+                title="Invalid Payment"
+                description="invalid token was provided"
+            />
+        );
+
+    if (error)
+        return <InvalidPayment title="Invalid Payment" description={error.data?.error ?? "failure in fetching token data"} />;
+
+    if (isLoading)
+        return (
+            <ProgressCircle.Root value={null} size="sm">
+                <ProgressCircle.Circle>
+                    <ProgressCircle.Track />
+                    <ProgressCircle.Range />
+                </ProgressCircle.Circle>
+            </ProgressCircle.Root>
+        );
 
     return (
         <Container p={10}>
@@ -145,10 +229,10 @@ export default function Home() {
                         </Box>
 
                         <HStack gap="4" pt="2">
-                            <Button colorScheme="red" onClick={handleCancel}>
+                            <Button colorPalette="red" onClick={handleCancel}>
                                 Cancel
                             </Button>
-                            <Button colorScheme="green" onClick={handleSubmit}>
+                            <Button colorPalette="green" onClick={handleSubmit}>
                                 Submit Payment
                             </Button>
                         </HStack>
@@ -164,7 +248,18 @@ export default function Home() {
                     borderRadius="lg"
                     boxShadow="md"
                 >
-                    <Heading>Payment Details</Heading>
+                    <Heading mb={5}>Payment Details</Heading>
+                    <Heading size="md">Remaining</Heading>
+                    <Text mb={2}>{remaining}</Text>
+                    <Heading size="md">Terminal Name</Heading>
+                    <Text mb={2}>{data?.terminalName}</Text>
+                    <Heading size="md">Terminal ID</Heading>
+                    <Text mb={2}>{data?.terminalId}</Text>
+                    <Heading size="md">Website</Heading>
+                    <Text mb={2}>{data?.website}</Text>
+                    <Heading size="md">Amount</Heading>
+                    <Text>{data?.amount} IRR</Text>
+
                 </Box>
             </HStack>
         </Container>

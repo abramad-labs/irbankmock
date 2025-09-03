@@ -1,5 +1,8 @@
 import { createTerminal } from "@/app/clients/banks/saman/saman";
+import { toaster } from "@/components/ui/toaster";
+import { CommonError } from "@/types/errors";
 import { Button, Field, Group, GroupProps, Input } from "@chakra-ui/react";
+import { AxiosError } from "axios";
 import { useState } from "react";
 
 export type TerminalCreateProps = {
@@ -17,14 +20,18 @@ export const TerminalCreate = (props: TerminalCreateProps) => {
                 .then((x) => {
                     setTerminalName("");
                 })
-                .catch((x) => {
-                    alert(x)
-                      
+                .catch((err: AxiosError<CommonError>) => {
+                    const error = err.response?.data?.error ?? err.message
+                    toaster.create({
+                        title: "Terminal",
+                        description: `Error creating terminal: ${error}`,
+                        type: "error",
+                    });
                 })
                 .finally(() => {
                     setSubmitting(false);
-                    if(props.terminalCreateFinalized) {
-                        props.terminalCreateFinalized()
+                    if (props.terminalCreateFinalized) {
+                        props.terminalCreateFinalized();
                     }
                 });
         }

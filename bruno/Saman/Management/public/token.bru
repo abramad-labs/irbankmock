@@ -1,0 +1,15 @@
+meta {
+  name: token
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/banks/saman/management/public/token?token=90182ab9-c9a8-4fb4-b9a4-61263be0ba03
+  body: none
+  auth: none
+}
+
+params:query {
+  token: 90182ab9-c9a8-4fb4-b9a4-61263be0ba03
+}

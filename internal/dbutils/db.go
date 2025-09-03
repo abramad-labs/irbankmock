@@ -24,6 +24,9 @@ func InitializeDb() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err = db.Exec("PRAGMA foreign_keys = ON;").Error; err != nil {
+		log.Fatalf("could not enable foreign keys on sqlite: %s", err.Error())
+	}
 
 	gormLogger = logger.New(log.Default(), logger.Config{
 		SlowThreshold:             365 * 24 * time.Hour,

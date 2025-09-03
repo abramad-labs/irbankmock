@@ -30,7 +30,7 @@ func GetDbFileName() string {
 }
 
 func GetDbPath() string {
-	return path.Join(GetDataPath(), GetDbFileName())
+	return path.Join(GetDataPath(), GetDbFileName()+"?_pragma=foreign_keys(1)")
 }
 
 func GetListenAddress() string {
@@ -63,6 +63,14 @@ func GetWebAppPath() string {
 	env := os.Getenv("IRBANKMOCK_WEBAPP_PATH")
 	if env == "" {
 		return "./web/app/out"
+	}
+	return env
+}
+
+func GetPublicHostname() string {
+	env := os.Getenv("IRBANKMOCK_PUBLIC_HOSTNAME")
+	if env == "" {
+		return "misconfig.example.com"
 	}
 	return env
 }

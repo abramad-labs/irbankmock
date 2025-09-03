@@ -1,14 +1,25 @@
 package sep
 
+import "time"
+
+type BankSepGetTerminalsResponseEndpoints struct {
+	PaymentGateway     string `json:"paymentGateway"`
+	PaymentToken       string `json:"paymentToken"`
+	Receipt            string `json:"receipt"`
+	VerifyTransaction  string `json:"verifyTransaction"`
+	ReverseTransaction string `json:"reverseTransaction"`
+}
+
 type BankSepGetTerminalsResponse struct {
-	Terminals []BankSepTerminal `json:"terminals"`
+	Terminals []*BankSepTerminalResponse            `json:"terminals"`
+	Endpoints *BankSepGetTerminalsResponseEndpoints `json:"endpoints"`
 }
 
 type BankSepCreateTerminalRequest struct {
 	Name string `json:"name"`
 }
 
-type BankSepCreateTerminalResponse struct {
+type BankSepTerminalResponse struct {
 	ID       uint64 `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
@@ -25,7 +36,7 @@ type BankSepTransactionRequest struct {
 	Action string `json:"action"`
 
 	// the merchant/termianl ID
-	TerminalId uint64 `json:"terminalId"`
+	TerminalId string `json:"terminalId"`
 
 	// amount of payment in IRR
 	Amount uint64 `json:"amount"`
@@ -72,10 +83,10 @@ type BankSepTransactionRequest struct {
 
 type BankSepTransactionResponse struct {
 	// 1 for ok case and -1 in case of failure
-	Status    int
-	Token     string
-	ErrorCode string
-	ErrorDesc string
+	Status    int    `json:"status"`
+	Token     string `json:"token,omitempty"`
+	ErrorCode string `json:"errorCode,omitempty"`
+	ErrorDesc string `json:"errorDesc,omitempty"`
 }
 
 type BankSepCustomerPayRequest struct {
@@ -171,4 +182,12 @@ type BankSepGetReceiptResponse struct {
 	ValidationErrors []BankSepValidationError
 	ErrorCode        int32
 	ErrorMessage     string
+}
+
+type BankSepPublicTokenInfoResponse struct {
+	TerminalName string    `json:"terminalName"`
+	TerminalId   uint64    `json:"terminalId"`
+	Website      string    `json:"website"`
+	Amount       uint64    `json:"amount"`
+	ExpiresAt    time.Time `json:"expiresAt"`
 }

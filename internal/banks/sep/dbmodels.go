@@ -83,7 +83,7 @@ type BankSepTransaction struct {
 	ReceiptExpiresAt time.Time
 }
 
-type BankSepTranasctionReceipt struct {
+type BankSepTransactionReceipt struct {
 	ID uint64 `gorm:"primarykey"`
 
 	TransactionId uint64

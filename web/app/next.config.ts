@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
   experimental: {
-    optimizePackageImports: ["@chakra-ui/react"]
+    optimizePackageImports: ["@chakra-ui/react"],
+    caseSensitiveRoutes: false
   },
   async rewrites() {
     return [
