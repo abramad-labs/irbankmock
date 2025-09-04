@@ -234,6 +234,10 @@ func cancelToken(c *fiber.Ctx, req *BankSepCancelOrFailTokenRequest) (*BankSepTo
 			return txErr
 		}
 
+		if btrx.Status != PaymentReceiptStatusInProgress {
+			return usererror.New(managementerrors.ErrTransactionNotFound)
+		}
+
 		txErr = tx.Model(btrx).Updates(map[string]any{
 			"cancelled_at": time.Now(),
 			"status":       PaymentReceiptStateCanceledByUser,
@@ -277,9 +281,13 @@ func failToken(c *fiber.Ctx, req *BankSepCancelOrFailTokenRequest) (*BankSepToke
 			return txErr
 		}
 
+		if btrx.Status != PaymentReceiptStatusInProgress {
+			return usererror.New(managementerrors.ErrTransactionNotFound)
+		}
+
 		txErr = tx.Model(btrx).Updates(map[string]any{
-			"failedAt": time.Now(),
-			"status":   PaymentReceiptStateFailed,
+			"failed_at": time.Now(),
+			"status":    PaymentReceiptStatusFailed,
 		}).Error
 		if txErr != nil {
 			return txErr
@@ -327,6 +335,11 @@ func submitToken(c *fiber.Ctx, req *BankSepSubmitTokenRequest) (*BankSepTokenFin
 		if txErr != nil {
 			return txErr
 		}
+
+		if btrx.Status != PaymentReceiptStatusInProgress {
+			return usererror.New(managementerrors.ErrTransactionNotFound)
+		}
+
 		now := time.Now()
 
 		update := tx.Model(&BankSepTransaction{}).

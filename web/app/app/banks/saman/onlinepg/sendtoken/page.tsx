@@ -110,17 +110,42 @@ const BankInputForm = ({
             });
     };
 
-    const handleFail = () => {};
+    const handleFail = () => {
+        setFormLoading(true);
+        failToken({
+            token: token,
+        })
+            .then((resp) => {
+                setFinalizeResponse(resp.data);
+            })
+            .catch((err: AxiosError<CommonError>) => {
+                const error = err.response?.data?.error ?? err.message;
+                toaster.create({
+                    title: "Payment Error",
+                    description: `Error finalizing payment: ${error}`,
+                    type: "error",
+                });
+                setFormLoading(false);
+            });
+    };
 
     const handleCancel = () => {
-        setFormData({
-            cardNumber: "",
-            cvv: "",
-            expiryMonth: "",
-            expiryYear: "",
-            captcha: "",
-            cardPassword: "",
-        });
+        setFormLoading(true);
+        cancelToken({
+            token: token,
+        })
+            .then((resp) => {
+                setFinalizeResponse(resp.data);
+            })
+            .catch((err: AxiosError<CommonError>) => {
+                const error = err.response?.data?.error ?? err.message;
+                toaster.create({
+                    title: "Payment Error",
+                    description: `Error finalizing payment: ${error}`,
+                    type: "error",
+                });
+                setFormLoading(false);
+            });
     };
 
     const [remaining, setRemaining] = useState("");
