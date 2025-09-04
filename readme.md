@@ -2,6 +2,8 @@
 
 A service for testing the internet payment gateways of Iranian banks for development environments.
 
+سرویسی برای تست درگاه پرداخت اینترنتی بانک های ایرانی در محیط‌های توسعه
+
 ![screenshot](./docs/screenshot.jpg)
 
 ## Support
