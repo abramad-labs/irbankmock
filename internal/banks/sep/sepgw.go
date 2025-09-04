@@ -31,6 +31,7 @@ func init() {
 		g.Post("/management/token/fail", FailToken)
 		g.Post("/management/token/cancel", CancelToken)
 		g.Post(BankSepPathOnlinePaymentGateway, PaymentGwTransaction)
+		g.Post(BankSepPathGetReceipt, GetReceipt)
 	})
 }
 
@@ -128,6 +129,19 @@ func FailToken(c *fiber.Ctx) error {
 	}
 
 	resp, err := failToken(c, req)
+	if err != nil {
+		return err
+	}
+	return c.JSON(resp)
+}
+
+func GetReceipt(c *fiber.Ctx) error {
+	req := new(BankSepGetReceiptRequest)
+	err := c.BodyParser(&req)
+	if err != nil {
+		return err
+	}
+	resp, err := getReceipt(c, req.TerminalNumber, req.RefNum, req.Token, req.TxnRandomSessionKey, req.Rrn)
 	if err != nil {
 		return err
 	}

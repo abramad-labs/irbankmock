@@ -392,3 +392,84 @@ func submitToken(c *fiber.Ctx, req *BankSepSubmitTokenRequest) (*BankSepTokenFin
 		},
 	}, nil
 }
+
+func getReceipt(c *fiber.Ctx, terminalId int64, refNum *string, token *string, rndSessionKey *int64, rrn *int64) (*BankSepGetReceiptResponse, error) {
+	db, err := dbutils.GetDb(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var terminal BankSepTerminal
+	err = db.Model(&BankSepTerminal{}).Where("id = ?", terminalId).Take(&terminal).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &BankSepGetReceiptResponse{
+				HasError:     true,
+				ErrorCode:    12,
+				ErrorMessage: "TerminalNotFound",
+			}, nil
+		}
+		return &BankSepGetReceiptResponse{
+			HasError:     true,
+			ErrorCode:    -1,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	var tx BankSepTransaction
+	query := db.Model(&BankSepTransaction{})
+	if refNum != nil {
+		query = query.Where("terminal_id = ? and ref_num = ?", terminalId, refNum)
+	} else if token != nil {
+		query = query.Where("terminal_id = ? and token = ?", terminalId, token)
+	} else {
+		return &BankSepGetReceiptResponse{
+			HasError:     true,
+			ErrorCode:    -1,
+			ErrorMessage: "either token or refnum must be provided",
+		}, nil
+	}
+	if rndSessionKey != nil {
+		query = query.Where("txn_random_session_key = ?", rndSessionKey)
+	}
+	if rrn != nil {
+		query = query.Where("rrn = ?", rrn)
+	}
+	err = query.Take(&tx).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &BankSepGetReceiptResponse{
+				HasError:     true,
+				ErrorCode:    404,
+				ErrorMessage: "ResourceNotFound",
+			}, nil
+		}
+		return &BankSepGetReceiptResponse{
+			HasError:     true,
+			ErrorCode:    -1,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+	if tx.ReceiptExpiresAt.Before(time.Now()) {
+		return &BankSepGetReceiptResponse{
+			HasError:     true,
+			ErrorCode:    404,
+			ErrorMessage: "ResourceNotFound",
+		}, nil
+	}
+	return &BankSepGetReceiptResponse{
+		Data: BankSepPaymentReceipt{
+			State:            tx.Status.GetState(),
+			Status:           tx.Status,
+			TerminalId:       int64(tx.TerminalId),
+			Token:            tx.Token,
+			RefNum:           *tx.RefNum,
+			ResNum:           tx.ResNum,
+			TraceNo:          int64(tx.TraceNo),
+			Amount:           int64(tx.Amount),
+			AffectiveAmount:  int64(*tx.AffectiveAmount),
+			Rrn:              *tx.Rrn,
+			HashedCardNumber: *tx.HashedCardNumber,
+		},
+	}, nil
+}

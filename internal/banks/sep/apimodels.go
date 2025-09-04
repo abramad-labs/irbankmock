@@ -126,6 +126,12 @@ type BankSepGetReceiptViaTokenRequest struct {
 	Token string
 }
 
+type BankSepGetReceiptRequest struct {
+	BankSepGetReceiptBaseRequest
+	Token  *string
+	RefNum *string
+}
+
 type BankSepValidationError struct {
 	FieldName     string
 	ErrorMessages []string
@@ -179,7 +185,7 @@ type BankSepPaymentReceipt struct {
 type BankSepGetReceiptResponse struct {
 	HasError         bool
 	Data             BankSepPaymentReceipt
-	ValidationErrors []BankSepValidationError
+	ValidationErrors []*BankSepValidationError
 	ErrorCode        int32
 	ErrorMessage     string
 }
