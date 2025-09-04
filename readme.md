@@ -1,6 +1,6 @@
 # IR Bank Mock
 
-A service for testing Iranian banks internet payment gateways.
+A service for testing the internet payment gateways of Iranian banks for development environments.
 
 ![screenshot](./docs/screenshot.jpg)
 
