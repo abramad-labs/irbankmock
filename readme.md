@@ -2,6 +2,8 @@
 
 A service for testing Iranian banks internet payment gateways.
 
+![screenshot](./docs/screenshot.jpg)
+
 ## Support
 
 This service currently only supports Saman Bank (SEP).
@@ -12,7 +14,7 @@ Visit [conf.go](./internal/conf/conf.go) to see which environment variables are 
 
 ## Deploy with Docker
 
-Coming
+Soon ™
 
 ## Security Considerations
 
@@ -40,6 +42,6 @@ Read more:
 
 ### Saman Electronic Payment (SEP)
 
-Implemented based on [SEP_OnlinePG_Merchant Document_Minimal_Current.pdf](./docs/SEP_OnlinePG_Merchant%20Document_Minimal_Current.pdf)
+- Implemented based on [SEP_OnlinePG_Merchant Document_Minimal_Current.pdf](./docs/SEP_OnlinePG_Merchant%20Document_Minimal_Current.pdf)
 
-It's a terrible documentation, I know...
+- It's a terrible documentation, I know...
