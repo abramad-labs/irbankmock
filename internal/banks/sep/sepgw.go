@@ -20,14 +20,15 @@ const BankSepPathReverseTransaction = "/verifyTxnRandomSessionkey/ipg/ReverseTra
 
 func init() {
 	migration.RegisterMigration("samanbank_models", func(m gorm.Migrator) error {
-		return m.AutoMigrate(BankSepTerminal{}, BankSepTransaction{}, &BankSepTransactionReceipt{})
+		return m.AutoMigrate(BankSepTerminal{}, BankSepTransaction{})
 	})
 
 	registry.RegisterBank("saman", func(g fiber.Router) {
 		g.Post("/management/terminal", CreateTerminal)
 		g.Get("/management/terminal", GetTerminals)
-		g.Get("/management/public/token", GetTokenInfo)
+		g.Get("/public/token", GetTokenInfo)
 		g.Post("/management/token/submit", SubmitToken)
+		g.Post("/management/token/fail", FailToken)
 		g.Post("/management/token/cancel", CancelToken)
 		g.Post(BankSepPathOnlinePaymentGateway, PaymentGwTransaction)
 	})
@@ -93,9 +94,42 @@ func GetTokenInfo(c *fiber.Ctx) error {
 }
 
 func SubmitToken(c *fiber.Ctx) error {
-	return nil
+	req := new(BankSepSubmitTokenRequest)
+	err := c.BodyParser(req)
+	if err != nil {
+		return err
+	}
+	resp, err := submitToken(c, req)
+	if err != nil {
+		return err
+	}
+	return c.JSON(resp)
 }
 
 func CancelToken(c *fiber.Ctx) error {
-	return nil
+	req := new(BankSepCancelOrFailTokenRequest)
+	err := c.BodyParser(req)
+	if err != nil {
+		return err
+	}
+
+	resp, err := cancelToken(c, req)
+	if err != nil {
+		return err
+	}
+	return c.JSON(resp)
+}
+
+func FailToken(c *fiber.Ctx) error {
+	req := new(BankSepCancelOrFailTokenRequest)
+	err := c.BodyParser(req)
+	if err != nil {
+		return err
+	}
+
+	resp, err := failToken(c, req)
+	if err != nil {
+		return err
+	}
+	return c.JSON(resp)
 }

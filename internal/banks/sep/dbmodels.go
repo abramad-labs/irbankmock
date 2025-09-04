@@ -38,7 +38,7 @@ type BankSepTransaction struct {
 	ResNum4 *string `gorm:"size:50"`
 
 	// where to redirect the buyer after the transaction finished
-	RedirectURL string
+	RedirectURL string `gorm:"size:2083"`
 
 	// optional fee of transaction, usually used for business partnership programs
 	Wage *int64
@@ -60,6 +60,9 @@ type BankSepTransaction struct {
 	// maximum 10 cards allowed.
 	HashedCardNumber *string
 
+	// actuall card after payment was done
+	PaidCardNumber *string
+
 	// if provided, you should pass this key to be able to receive the receipt
 	TxnRandomSessionKey *int64
 
@@ -68,9 +71,25 @@ type BankSepTransaction struct {
 	TraceNo uint64
 
 	// reference number used for validation and verification of transaction
-	RefNum string
+	// generated in bank side only after a successful transaction
+	RefNum *string
 
-	Verified bool
+	// Retrieval Reference Number (RRN) is a unique identifier assigned to a specific transaction
+	// to facilitate the retrieval of transaction details
+	// generated in bank side only after a successful transaction
+	Rrn *int64
+
+	CancelledAt *time.Time
+	FailedAt    *time.Time
+	SubmittedAt *time.Time
+	VerifiedAt  *time.Time
+	ReversedAt  *time.Time
+
+	// merchant has 30 minutes to verify
+	VerifyDeadline *time.Time
+
+	// merchant has 50 minutes to reverse
+	ReverseDeadline *time.Time
 
 	Status PaymentReceiptStatus
 
@@ -80,17 +99,6 @@ type BankSepTransaction struct {
 	// calculated using created_at + token_expiry_in_min
 	ExpiresAt time.Time
 
+	// receipt will expire an hour past token creation
 	ReceiptExpiresAt time.Time
-}
-
-type BankSepTransactionReceipt struct {
-	ID uint64 `gorm:"primarykey"`
-
-	TransactionId uint64
-	Transaction   BankSepTransaction `gorm:"foreignKey:TransactionId"`
-
-	Verified bool
-
-	CreatedAt time.Time
-	ExpiresAt time.Time
 }

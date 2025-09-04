@@ -1,8 +1,12 @@
 package sep
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/rand"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +22,7 @@ import (
 	"github.com/abramad-labs/irbankmock/internal/usererror"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"gorm.io/gorm"
 )
 
@@ -133,7 +138,6 @@ func processTransactionRequest(ctx *fiber.Ctx, req *BankSepTransactionRequest) (
 	now := time.Now()
 
 	token := uuid.NewString()
-	refNum := uuid.NewString()
 
 	terminalId, err := strconv.ParseUint(req.TerminalId, 10, 64)
 	if err != nil {
@@ -170,9 +174,7 @@ func processTransactionRequest(ctx *fiber.Ctx, req *BankSepTransactionRequest) (
 		CreatedAt:           now,
 		ExpiresAt:           now.Add(time.Duration(req.TokenExpiryInMin) * time.Minute),
 		Token:               token,
-		Verified:            false,
 		ReceiptExpiresAt:    now.Add(time.Hour),
-		RefNum:              refNum,
 	}
 
 	err = db.Create(&trxModel).Error
@@ -206,11 +208,174 @@ func getPublicTokenInfo(c *fiber.Ctx, token string) (*BankSepPublicTokenInfoResp
 		return nil, usererror.New(managementerrors.ErrTokenExpired)
 	}
 
+	if tokenInfo.Status != PaymentReceiptStatusInProgress {
+		return nil, usererror.New(managementerrors.ErrTokenNoLongerAvailable)
+	}
+
 	return &BankSepPublicTokenInfoResponse{
 		TerminalName: tokenInfo.Terminal.Name,
 		TerminalId:   tokenInfo.TerminalId,
 		Website:      "mock.example.com",
 		Amount:       tokenInfo.Amount,
 		ExpiresAt:    tokenInfo.ExpiresAt,
+	}, nil
+}
+
+func cancelToken(c *fiber.Ctx, req *BankSepCancelOrFailTokenRequest) (*BankSepTokenFinalizeResponse, error) {
+	db, err := dbutils.GetDb(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var btrx BankSepTransaction
+	err = db.Transaction(func(tx *gorm.DB) error {
+		txErr := tx.Model(&BankSepTransaction{}).Where("token = ?", req.Token).Take(&btrx).Error
+		if txErr != nil {
+			return txErr
+		}
+
+		txErr = tx.Model(btrx).Updates(map[string]any{
+			"cancelled_at": time.Now(),
+			"status":       PaymentReceiptStateCanceledByUser,
+		}).Error
+		if txErr != nil {
+			return txErr
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	url, err := url.Parse(btrx.RedirectURL)
+	if err != nil {
+		return nil, err
+	}
+	query := url.Query()
+	query.Set("Token", req.Token)
+	url.RawQuery = query.Encode()
+
+	return &BankSepTokenFinalizeResponse{
+		RedirectURL: url.String(),
+		CallbackData: &BankSepTokenFinalizeResponseCallbackData{
+			MID:        fmt.Sprint(btrx.TerminalId),
+			TerminalId: fmt.Sprint(btrx.TerminalId),
+			Token:      req.Token,
+		},
+	}, nil
+}
+
+func failToken(c *fiber.Ctx, req *BankSepCancelOrFailTokenRequest) (*BankSepTokenFinalizeResponse, error) {
+	db, err := dbutils.GetDb(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var btrx BankSepTransaction
+	err = db.Transaction(func(tx *gorm.DB) error {
+		txErr := tx.Model(&BankSepTransaction{}).Where("token = ?", req.Token).Take(&btrx).Error
+		if txErr != nil {
+			return txErr
+		}
+
+		txErr = tx.Model(btrx).Updates(map[string]any{
+			"failedAt": time.Now(),
+			"status":   PaymentReceiptStateFailed,
+		}).Error
+		if txErr != nil {
+			return txErr
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	url, err := url.Parse(btrx.RedirectURL)
+	if err != nil {
+		return nil, err
+	}
+	query := url.Query()
+	query.Set("Token", req.Token)
+	url.RawQuery = query.Encode()
+
+	return &BankSepTokenFinalizeResponse{
+		RedirectURL: url.String(),
+		CallbackData: &BankSepTokenFinalizeResponseCallbackData{
+			MID:        fmt.Sprint(btrx.TerminalId),
+			TerminalId: fmt.Sprint(btrx.TerminalId),
+			Token:      req.Token,
+		},
+	}, nil
+}
+
+func submitToken(c *fiber.Ctx, req *BankSepSubmitTokenRequest) (*BankSepTokenFinalizeResponse, error) {
+	db, err := dbutils.GetDb(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var btrx BankSepTransaction
+	rrn := rand.Int63()
+	refNum, err := gonanoid.New()
+	if err != nil {
+		return nil, err
+	}
+	cardHashBinary := sha256.Sum256([]byte(req.CardNumber))
+	hashedCardNumber := hex.EncodeToString(cardHashBinary[:])
+
+	err = db.Transaction(func(tx *gorm.DB) error {
+		txErr := tx.Model(&BankSepTransaction{}).Where("token = ?", req.Token).Take(&btrx).Error
+		if txErr != nil {
+			return txErr
+		}
+		now := time.Now()
+
+		update := tx.Model(&BankSepTransaction{}).
+			Where("id = ?", btrx.ID).
+			Updates(map[string]any{
+				"status":             PaymentReceiptStatusOK,
+				"rrn":                rrn,
+				"ref_num":            refNum,
+				"submitted_at":       now,
+				"verify_deadline":    now.Add(30 * time.Minute),
+				"reverse_deadline":   now.Add(50 * time.Minute),
+				"paid_card_number":   req.CardNumber,
+				"hashed_card_number": hashedCardNumber,
+			})
+		if update.Error != nil {
+			return update.Error
+		}
+		if update.RowsAffected == 0 {
+			return usererror.New(managementerrors.ErrTransactionNotFound)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	url, err := url.Parse(btrx.RedirectURL)
+	if err != nil {
+		return nil, err
+	}
+	query := url.Query()
+	query.Set("Token", req.Token)
+	query.Set("RefNum", refNum)
+	url.RawQuery = query.Encode()
+
+	return &BankSepTokenFinalizeResponse{
+		RedirectURL: url.String(),
+		CallbackData: &BankSepTokenFinalizeResponseCallbackData{
+			MID:              fmt.Sprint(btrx.TerminalId),
+			TerminalId:       fmt.Sprint(btrx.TerminalId),
+			Token:            req.Token,
+			RefNum:           refNum,
+			Rrn:              fmt.Sprint(rrn),
+			State:            string(btrx.Status.GetState()),
+			Status:           fmt.Sprint(btrx.Status),
+			ResNum:           btrx.ResNum,
+			Amount:           fmt.Sprint(btrx.Amount),
+			HashedCardNumber: hashedCardNumber,
+			SecurePan:        maskThirdQuarter(req.CardNumber),
+		},
 	}, nil
 }

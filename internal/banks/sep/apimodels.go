@@ -191,3 +191,39 @@ type BankSepPublicTokenInfoResponse struct {
 	Amount       uint64    `json:"amount"`
 	ExpiresAt    time.Time `json:"expiresAt"`
 }
+
+type BankSepCancelOrFailTokenRequest struct {
+	Token string `json:"token"`
+}
+
+type BankSepSubmitTokenRequest struct {
+	Token        string `json:"token"`
+	CardNumber   string `json:"cardNumber"`
+	Cvv          int32  `json:"cvv"`
+	ExpiryMonth  int32  `json:"expiryMonth"`
+	ExpiryYear   int32  `json:"expiryYear"`
+	CardPassword string `json:"cardPassword"`
+	Captcha      string `json:"captcha"`
+}
+
+type BankSepTokenFinalizeResponseCallbackData struct {
+	MID              string `json:"MID"`
+	TerminalId       string `json:"terminalId"`
+	State            string `json:"state"`
+	Status           string `json:"status"`
+	Rrn              string `json:"rrn"`
+	RefNum           string `json:"refNum"`
+	ResNum           string `json:"resNum"`
+	TraceNo          string `json:"traceNo"`
+	Amount           string `json:"amount"`
+	AffectiveAmount  string `json:"affectiveAmount"`
+	Wage             string `json:"wage"`
+	SecurePan        string `json:"securePan"`
+	HashedCardNumber string `json:"hashedCardNumber"`
+	Token            string `json:"token"`
+}
+
+type BankSepTokenFinalizeResponse struct {
+	RedirectURL  string                                    `json:"redirectURL"`
+	CallbackData *BankSepTokenFinalizeResponseCallbackData `json:"callbackData"`
+}

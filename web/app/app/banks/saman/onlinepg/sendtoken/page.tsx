@@ -1,7 +1,18 @@
 "use client";
 
+import {
+    cancelToken,
+    failToken,
+    submitToken,
+} from "@/clients/banks/saman/saman";
+import { toaster } from "@/components/ui/toaster";
 import { fetcherWithError, ResponseError } from "@/lib/fetcher";
-import { SamanPublicTokenInfoResponse, SuccessErrorPair } from "@/types/banks/saman/types";
+import {
+    BankSepTokenFinalizeResponse,
+    SamanPublicTokenInfoResponse,
+    SuccessErrorPair,
+} from "@/types/banks/saman/types";
+import { CommonError } from "@/types/errors";
 import {
     Box,
     Container,
@@ -14,7 +25,11 @@ import {
     Button,
     ProgressCircle,
     EmptyState,
+    Center,
+    Grid,
+    GridItem,
 } from "@chakra-ui/react";
+import { AxiosError } from "axios";
 import { intervalToDuration, parseISO } from "date-fns";
 import { useSearchParams } from "next/navigation";
 import { ChangeEventHandler, useEffect, useState } from "react";
@@ -39,16 +54,21 @@ const InvalidPayment = (props: { title: string; description: string }) => {
     );
 };
 
-export default function Home() {
-    const searchParams = useSearchParams()
-    const token = searchParams.get("token") ?? ""
-    const { data, error, isLoading, mutate } =
-        useSWR<SamanPublicTokenInfoResponse, ResponseError<SuccessErrorPair>>(
-            `/banks/saman/management/public/token/?token=${encodeURIComponent(
-                token
-            )}`,
-            fetcherWithError
-        );
+const BankInputForm = ({
+    setFinalizeResponse,
+}: {
+    setFinalizeResponse: (resp: BankSepTokenFinalizeResponse) => void;
+}) => {
+    const searchParams = useSearchParams();
+    const token = searchParams.get("token") ?? "";
+    const { data, error, isLoading, mutate } = useSWR<
+        SamanPublicTokenInfoResponse,
+        ResponseError<SuccessErrorPair>
+    >(
+        `/banks/saman/public/token/?token=${encodeURIComponent(token)}`,
+        fetcherWithError
+    );
+
     const [formData, setFormData] = useState({
         cardNumber: "",
         cvv: "",
@@ -58,14 +78,39 @@ export default function Home() {
         cardPassword: "",
     });
 
+    const [formLoading, setFormLoading] = useState(false);
+
     const handleChange: ChangeEventHandler<HTMLInputElement> = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = () => {
-        console.log("Submitting payment:", formData);
+        setFormLoading(true);
+        submitToken({
+            token: token,
+            captcha: formData.captcha,
+            cardNumber: formData.cardNumber,
+            cardPassword: formData.cardPassword,
+            cvv: parseInt(formData.cvv, 10),
+            expiryMonth: parseInt(formData.expiryMonth, 10),
+            expiryYear: parseInt(formData.expiryYear, 10),
+        })
+            .then((resp) => {
+                setFinalizeResponse(resp.data);
+            })
+            .catch((err: AxiosError<CommonError>) => {
+                const error = err.response?.data?.error ?? err.message;
+                toaster.create({
+                    title: "Payment Error",
+                    description: `Error finalizing payment: ${error}`,
+                    type: "error",
+                });
+                setFormLoading(false);
+            });
     };
+
+    const handleFail = () => {};
 
     const handleCancel = () => {
         setFormData({
@@ -78,33 +123,33 @@ export default function Home() {
         });
     };
 
+    const [remaining, setRemaining] = useState("");
 
- const [remaining, setRemaining] = useState("");
+    useEffect(() => {
+        if (!data?.expiresAt) return;
 
-  useEffect(() => {
-    if(!data?.expiresAt)
-        return
+        const target = parseISO(data?.expiresAt);
 
-    const target = parseISO(data?.expiresAt);
+        function update() {
+            const now = new Date();
+            if (now >= target) {
+                setRemaining("00:00");
+                mutate();
+                return;
+            }
 
-    function update() {
-      const now = new Date();
-      if (now >= target) {
-        setRemaining("00:00");
-        mutate()
-        return;
-      }
+            const dur = intervalToDuration({ start: now, end: target });
+            const mm = String(
+                (dur.hours || 0) * 60 + (dur.minutes || 0)
+            ).padStart(2, "0");
+            const ss = String(dur.seconds || 0).padStart(2, "0");
+            setRemaining(`${mm}:${ss}`);
+        }
 
-      const dur = intervalToDuration({ start: now, end: target });
-      const mm = String((dur.hours || 0) * 60 + (dur.minutes || 0)).padStart(2, "0");
-      const ss = String(dur.seconds || 0).padStart(2, "0");
-      setRemaining(`${mm}:${ss}`);
-    }
-
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [data?.expiresAt]);
+        update();
+        const id = setInterval(update, 1000);
+        return () => clearInterval(id);
+    }, [data?.expiresAt]);
 
     if (token === "")
         return (
@@ -115,7 +160,14 @@ export default function Home() {
         );
 
     if (error)
-        return <InvalidPayment title="Invalid Payment" description={error.data?.error ?? "failure in fetching token data"} />;
+        return (
+            <InvalidPayment
+                title="Invalid Payment"
+                description={
+                    error.data?.error ?? "failure in fetching token data"
+                }
+            />
+        );
 
     if (isLoading)
         return (
@@ -127,6 +179,8 @@ export default function Home() {
             </ProgressCircle.Root>
         );
 
+    const disableSubmit =
+        formData.cardNumber.length !== 16 || !/\d+/.test(formData.cardNumber);
     return (
         <Container p={10}>
             <Heading mx="auto" mb={5}>
@@ -149,6 +203,7 @@ export default function Home() {
                             <Input
                                 name="cardNumber"
                                 type="text"
+                                disabled={formLoading}
                                 maxLength={16}
                                 value={formData.cardNumber}
                                 onChange={handleChange}
@@ -162,8 +217,9 @@ export default function Home() {
                             </Text>
                             <Input
                                 name="cvv"
-                                type="password"
+                                type="number"
                                 maxLength={4}
+                                disabled={formLoading}
                                 value={formData.cvv}
                                 onChange={handleChange}
                                 placeholder="Enter CVV"
@@ -180,6 +236,7 @@ export default function Home() {
                                     type="number"
                                     min={1}
                                     max={12}
+                                    disabled={formLoading}
                                     value={formData.expiryMonth}
                                     onChange={handleChange}
                                     placeholder="MM"
@@ -195,6 +252,7 @@ export default function Home() {
                                     type="number"
                                     min={2024}
                                     max={2100}
+                                    disabled={formLoading}
                                     value={formData.expiryYear}
                                     onChange={handleChange}
                                     placeholder="YYYY"
@@ -210,6 +268,7 @@ export default function Home() {
                                 name="captcha"
                                 type="text"
                                 value={formData.captcha}
+                                disabled={formLoading}
                                 onChange={handleChange}
                                 placeholder="Enter captcha text"
                             />
@@ -223,16 +282,32 @@ export default function Home() {
                                 name="cardPassword"
                                 type="password"
                                 value={formData.cardPassword}
+                                disabled={formLoading}
                                 onChange={handleChange}
                                 placeholder="Enter card password"
                             />
                         </Box>
 
                         <HStack gap="4" pt="2">
-                            <Button colorPalette="red" onClick={handleCancel}>
+                            <Button
+                                colorPalette="pink"
+                                disabled={formLoading}
+                                onClick={handleCancel}
+                            >
                                 Cancel
                             </Button>
-                            <Button colorPalette="green" onClick={handleSubmit}>
+                            <Button
+                                colorPalette="red"
+                                onClick={handleFail}
+                                disabled={disableSubmit || formLoading}
+                            >
+                                Fail
+                            </Button>
+                            <Button
+                                colorPalette="green"
+                                onClick={handleSubmit}
+                                disabled={disableSubmit || formLoading}
+                            >
                                 Submit Payment
                             </Button>
                         </HStack>
@@ -259,9 +334,190 @@ export default function Home() {
                     <Text mb={2}>{data?.website}</Text>
                     <Heading size="md">Amount</Heading>
                     <Text>{data?.amount} IRR</Text>
-
                 </Box>
             </HStack>
         </Container>
+    );
+};
+
+const RedirectPageView = ({
+    tokenFinalizeResponse,
+}: {
+    tokenFinalizeResponse: BankSepTokenFinalizeResponse;
+}) => {
+    const cb = tokenFinalizeResponse.callbackData;
+    return (
+        <Container p={10}>
+            <Heading mx="auto" mb={5}>
+                Saman Bank Internet Payment Gateway (Test)
+            </Heading>
+            <Stack m="auto" height={500} maxWidth={900}>
+                <Center
+                    w="100%"
+                    mx="auto"
+                    p="4"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    boxShadow="md"
+                >
+                    <Stack direction="column" gap="4" align="stretch">
+                        <Heading>
+                            You are being redirected to the merchant website...
+                        </Heading>
+                        <Center textAlign="center" gap="4" pt="2">
+                            <form
+                                method="post"
+                                action={tokenFinalizeResponse?.redirectURL}
+                            >
+                                <input
+                                    type="hidden"
+                                    name="MID"
+                                    value={cb.MID}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="TerminalId"
+                                    value={cb.terminalId}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="AffectiveAmount"
+                                    value={cb.affectiveAmount}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="Amount"
+                                    value={cb.amount}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="HashedCardNumber"
+                                    value={cb.hashedCardNumber}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="RefNum"
+                                    value={cb.refNum}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="ResNum"
+                                    value={cb.resNum}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="RRN"
+                                    value={cb.rrn}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="SecurePan"
+                                    value={cb.securePan}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="State"
+                                    value={cb.state}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="Status"
+                                    value={cb.status}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="Token"
+                                    value={cb.token}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="TraceNo"
+                                    value={cb.traceNo}
+                                />
+                                <input
+                                    type="hidden"
+                                    name="Wage"
+                                    value={cb.wage}
+                                />
+                                <Button type="submit" colorPalette="blue">
+                                    Redirect Now
+                                </Button>
+                            </form>
+                        </Center>
+                    </Stack>
+                </Center>
+                <Box
+                    mx="auto"
+                    w="100%"
+                    h="100%"
+                    p="4"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    boxShadow="md"
+                >
+                    <Heading mb={5}>Payment Details</Heading>
+                    <Grid templateColumns="repeat(2, 1fr)">
+                        <GridItem>
+                            <Heading size="md">Terminal ID</Heading>
+                            <Text mb={2}>
+                                {cb.terminalId}
+                            </Text>
+                            <Heading size="md">Amount</Heading>
+                            <Text mb={2}>
+                                {cb.amount}
+                            </Text>
+                            <Heading size="md">Card</Heading>
+                            <Text mb={2}>{cb.securePan}</Text>
+                            <Heading size="md">Reference Num</Heading>
+                            <Text mb={2}>{cb.refNum}</Text>
+                            <Heading size="md">Reservation Num</Heading>
+                            <Text>{cb.resNum}</Text>
+                        </GridItem>
+                        <GridItem>
+                            <Heading size="md">RRN</Heading>
+                            <Text mb={2}>{cb.rrn}</Text>
+                            <Heading size="md">State</Heading>
+                            <Text mb={2}>{cb.state}</Text>
+                            <Heading size="md">Status</Heading>
+                            <Text mb={2}>{cb.status}</Text>
+                            <Heading size="md">Trace No</Heading>
+                            <Text mb={2}>{cb.traceNo}</Text>
+                            <Heading size="md">Wage</Heading>
+                            <Text>{cb.wage} IRR</Text>
+                        </GridItem>
+                    </Grid>
+                </Box>
+            </Stack>
+        </Container>
+    );
+};
+
+export default function Home() {
+    const [pageMode, setPageMode] = useState<"input" | "redirect">("input");
+    const [tokenFinalizeResponse, setTokenFinalizeResponse] = useState<
+        BankSepTokenFinalizeResponse | undefined
+    >(undefined);
+
+    const setFinalizeResponseCallback = (
+        resp: BankSepTokenFinalizeResponse
+    ) => {
+        setTokenFinalizeResponse(resp, );
+    };
+
+    useEffect(() => {
+        if(tokenFinalizeResponse) {
+            setPageMode("redirect")
+        }
+    }, [tokenFinalizeResponse])
+
+    return pageMode === "input" ? (
+        <BankInputForm setFinalizeResponse={setFinalizeResponseCallback} />
+    ) : tokenFinalizeResponse ? (
+        <RedirectPageView tokenFinalizeResponse={tokenFinalizeResponse} />
+    ) : (
+        <InvalidPayment
+            title="Unexpected Error"
+            description="Server didn't respond with correct data"
+        />
     );
 }

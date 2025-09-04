@@ -1,4 +1,4 @@
-import { createTerminal } from "@/app/clients/banks/saman/saman";
+import { createTerminal } from "@/clients/banks/saman/saman";
 import { toaster } from "@/components/ui/toaster";
 import { CommonError } from "@/types/errors";
 import { Button, Field, Group, GroupProps, Input } from "@chakra-ui/react";

@@ -14,3 +14,12 @@ func SplitByDelimiters(s string) []string {
 	}
 	return parts
 }
+
+func maskThirdQuarter(card string) string {
+	if len(card) != 16 {
+		return card
+	}
+
+	masked := card[:8] + strings.Repeat("*", 4) + card[12:]
+	return masked
+}

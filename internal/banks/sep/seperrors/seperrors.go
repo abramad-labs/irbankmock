@@ -22,7 +22,7 @@ var ErrXInvalidRedirectURLScheme = errors.New("redirect url does not have correc
 var ErrXEmptyResNum = errors.New("must include resnum")
 
 func GetBankSepErrorCode(err error) int {
-	if errors.Is(err, ErrTerminalIsDisabled) {
+	if errors.Is(err, ErrTerminalNotFound) {
 		return 12
 	}
 	if errors.Is(err, ErrResourceNotFound) {
