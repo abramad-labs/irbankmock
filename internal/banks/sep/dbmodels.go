@@ -19,7 +19,7 @@ type BankSepTransaction struct {
 	Terminal   BankSepTerminal `gorm:"foreignKey:TerminalId"`
 
 	// amount of payment in IRR
-	Amount uint64
+	Amount int64
 
 	// reservation number is a unique number generated in merchant side to
 	// prevent double-spending and can be used for inquery
@@ -45,7 +45,7 @@ type BankSepTransaction struct {
 
 	// amount that is reduced from the customer card. this parameter is ignore by the
 	// irbankmock service.
-	AffectiveAmount *int
+	AffectiveAmount *int64
 
 	// optional buyer phone number64 used to store and retrieve card info and auto-fill
 	// the payment form
@@ -68,7 +68,8 @@ type BankSepTransaction struct {
 
 	Token string
 
-	TraceNo uint64
+	TraceNo   *int64
+	TraceDate *time.Time
 
 	// reference number used for validation and verification of transaction
 	// generated in bank side only after a successful transaction

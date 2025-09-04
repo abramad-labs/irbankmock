@@ -39,7 +39,7 @@ type BankSepTransactionRequest struct {
 	TerminalId string `json:"terminalId"`
 
 	// amount of payment in IRR
-	Amount uint64 `json:"amount"`
+	Amount int64 `json:"amount"`
 
 	// reservation number is a unique number generated in merchant side to
 	// prevent double-spending and can be used for inquery
@@ -62,7 +62,7 @@ type BankSepTransactionRequest struct {
 
 	// amount that is reduced from the customer card. this parameter is ignore by the
 	// irbankmock service.
-	AffectiveAmount *int `json:"affectiveAmount,omitempty"`
+	AffectiveAmount *int64 `json:"affectiveAmount,omitempty"`
 
 	// optional buyer phone number64 used to store and retrieve card info and auto-fill
 	// the payment form
@@ -194,7 +194,7 @@ type BankSepPublicTokenInfoResponse struct {
 	TerminalName string    `json:"terminalName"`
 	TerminalId   uint64    `json:"terminalId"`
 	Website      string    `json:"website"`
-	Amount       uint64    `json:"amount"`
+	Amount       int64     `json:"amount"`
 	ExpiresAt    time.Time `json:"expiresAt"`
 }
 
@@ -233,3 +233,30 @@ type BankSepTokenFinalizeResponse struct {
 	RedirectURL  string                                    `json:"redirectURL"`
 	CallbackData *BankSepTokenFinalizeResponseCallbackData `json:"callbackData"`
 }
+
+type BankSepVerificationRequest struct {
+	RefNum         string
+	TerminalNumber int64
+}
+
+type BankSepTransactionDetailResponse struct {
+	RRN             string
+	RefNum          string
+	MaskedPan       string
+	HashedPan       string
+	TerminalNumber  int32
+	OriginalAmount  int64
+	AffectiveAmount int64
+	StraceDate      time.Time
+	StraceNo        int64
+}
+
+type BankSepVerificationResponse struct {
+	TransactionDetail *BankSepTransactionDetailResponse
+	ResultCode        int32
+	ResultDescription string
+	Success           bool
+}
+
+type BankSepReverseRequest BankSepVerificationRequest
+type BankSepReverseResponse BankSepVerificationResponse

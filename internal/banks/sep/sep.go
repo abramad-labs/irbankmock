@@ -323,6 +323,7 @@ func submitToken(c *fiber.Ctx, req *BankSepSubmitTokenRequest) (*BankSepTokenFin
 
 	var btrx BankSepTransaction
 	rrn := rand.Int63()
+	traceNo := rand.Int63()
 	refNum, err := gonanoid.New()
 	if err != nil {
 		return nil, err
@@ -353,6 +354,8 @@ func submitToken(c *fiber.Ctx, req *BankSepSubmitTokenRequest) (*BankSepTokenFin
 				"reverse_deadline":   now.Add(50 * time.Minute),
 				"paid_card_number":   req.CardNumber,
 				"hashed_card_number": hashedCardNumber,
+				"trace_no":           traceNo,
+				"trace_date":         now,
 			})
 		if update.Error != nil {
 			return update.Error
@@ -465,11 +468,251 @@ func getReceipt(c *fiber.Ctx, terminalId int64, refNum *string, token *string, r
 			Token:            tx.Token,
 			RefNum:           *tx.RefNum,
 			ResNum:           tx.ResNum,
-			TraceNo:          int64(tx.TraceNo),
+			TraceNo:          int64(*tx.TraceNo),
 			Amount:           int64(tx.Amount),
 			AffectiveAmount:  int64(*tx.AffectiveAmount),
 			Rrn:              *tx.Rrn,
 			HashedCardNumber: *tx.HashedCardNumber,
+		},
+	}, nil
+}
+
+func verifyTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSepVerificationResponse, error) {
+	db, err := dbutils.GetDb(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var terminalExists bool
+	err = db.Model(&BankSepTerminal{}).
+		Select("count(*) > 0").
+		Where("id = ?", terminalId).
+		Find(&terminalExists).
+		Error
+
+	if err != nil {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: err.Error(),
+		}, nil
+	}
+
+	if !terminalExists {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -105,
+			ResultDescription: "ترمینال ارسالی در سیستم موجود نمی باشد.",
+		}, nil
+	}
+
+	var btx BankSepTransaction
+	err = db.Model(&BankSepTransaction{}).Where("id = ? and ref_num = ?", terminalId, refNum).Take(&btx).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &BankSepVerificationResponse{
+				Success:           false,
+				ResultCode:        -2,
+				ResultDescription: "تراکنش یافت نشد",
+			}, nil
+		}
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: err.Error(),
+		}, nil
+	}
+
+	if btx.Status != PaymentReceiptStatusOK {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -2,
+			ResultDescription: "تراکنش یافت نشد",
+		}, nil
+	}
+
+	if btx.VerifyDeadline.Before(time.Now()) {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -6,
+			ResultDescription: "بیش از نیم ساعت از اجرای تراکنش گذشته است.",
+		}, nil
+	}
+
+	if btx.VerifiedAt != nil {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        2,
+			ResultDescription: "درخواست تکراری می باشد.",
+		}, nil
+	}
+
+	if btx.ReversedAt != nil {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        5,
+			ResultDescription: "تراکنش برگشت خورده می باشد.",
+		}, nil
+	}
+
+	now := time.Now()
+
+	update := db.Model(&BankSepTransaction{}).Where("id = ?", btx.ID).Update("verified_at", now)
+
+	if update.Error != nil {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: update.Error.Error(),
+		}, nil
+	}
+	if update.RowsAffected == 0 {
+		return &BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -2,
+			ResultDescription: "تراکنش یافت نشد",
+		}, nil
+	}
+
+	return &BankSepVerificationResponse{
+		Success:           true,
+		ResultDescription: "عملیات با موفقیت انجام شد.",
+		TransactionDetail: &BankSepTransactionDetailResponse{
+			RRN:            fmt.Sprint(btx.Rrn),
+			RefNum:         *btx.RefNum,
+			MaskedPan:      maskThirdQuarter(*btx.PaidCardNumber),
+			HashedPan:      *btx.HashedCardNumber,
+			TerminalNumber: int32(btx.TerminalId),
+			OriginalAmount: int64(btx.Amount),
+			AffectiveAmount: func() int64 {
+				if btx.AffectiveAmount == nil {
+					return btx.Amount
+				} else {
+					return *btx.AffectiveAmount
+				}
+			}(),
+			StraceDate: *btx.TraceDate,
+			StraceNo:   *btx.TraceNo,
+		},
+	}, nil
+}
+
+func reverseTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSepReverseResponse, error) {
+	db, err := dbutils.GetDb(c)
+	if err != nil {
+		return nil, err
+	}
+
+	var terminalExists bool
+	err = db.Model(&BankSepTerminal{}).
+		Select("count(*) > 0").
+		Where("id = ?", terminalId).
+		Find(&terminalExists).
+		Error
+
+	if err != nil {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: err.Error(),
+		}, nil
+	}
+
+	if !terminalExists {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -105,
+			ResultDescription: "ترمینال ارسالی در سیستم موجود نمی باشد.",
+		}, nil
+	}
+
+	var btx BankSepTransaction
+	err = db.Model(&BankSepTransaction{}).Where("id = ? and ref_num = ?", terminalId, refNum).Take(&btx).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &BankSepReverseResponse{
+				Success:           false,
+				ResultCode:        -2,
+				ResultDescription: "تراکنش یافت نشد",
+			}, nil
+		}
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: err.Error(),
+		}, nil
+	}
+
+	if btx.Status != PaymentReceiptStatusOK {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -2,
+			ResultDescription: "تراکنش یافت نشد",
+		}, nil
+	}
+
+	if btx.ReverseDeadline.Before(time.Now()) {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -6,
+			ResultDescription: "بیش از 50 دقیقه از اجرای تراکنش گذشته است.",
+		}, nil
+	}
+
+	if btx.VerifiedAt == nil {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        2,
+			ResultDescription: "درخواست تایید نشده می باشد.",
+		}, nil
+	}
+
+	if btx.ReversedAt != nil {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        5,
+			ResultDescription: "تراکنش برگشت خورده می باشد.",
+		}, nil
+	}
+
+	now := time.Now()
+
+	update := db.Model(&BankSepTransaction{}).Where("id = ?", btx.ID).Update("reversed_at", now)
+
+	if update.Error != nil {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: update.Error.Error(),
+		}, nil
+	}
+	if update.RowsAffected == 0 {
+		return &BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -2,
+			ResultDescription: "تراکنش یافت نشد",
+		}, nil
+	}
+
+	return &BankSepReverseResponse{
+		Success:           true,
+		ResultDescription: "عملیات با موفقیت انجام شد.",
+		TransactionDetail: &BankSepTransactionDetailResponse{
+			RRN:            fmt.Sprint(btx.Rrn),
+			RefNum:         *btx.RefNum,
+			MaskedPan:      maskThirdQuarter(*btx.PaidCardNumber),
+			HashedPan:      *btx.HashedCardNumber,
+			TerminalNumber: int32(btx.TerminalId),
+			OriginalAmount: int64(btx.Amount),
+			AffectiveAmount: func() int64 {
+				if btx.AffectiveAmount == nil {
+					return btx.Amount
+				} else {
+					return *btx.AffectiveAmount
+				}
+			}(),
+			StraceDate: *btx.TraceDate,
+			StraceNo:   *btx.TraceNo,
 		},
 	}, nil
 }
