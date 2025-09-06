@@ -17,7 +17,7 @@ Visit [conf.go](./internal/conf/conf.go) to see which environment variables are 
 ## Deploy with Docker
 
 ```sh
-docker run -v "irbankmock-data:/opt/irbankmock/data" --rm -p 13000:3000 ghcr.io/abramad-labs/irbankmock:0.0.1-r3
+docker run -v "irbankmock-data:/opt/irbankmock/data" --rm -p 13000:3000 ghcr.io/abramad-labs/irbankmock:0.0.9-r1
 ```
 
 ### Deploy with Compose

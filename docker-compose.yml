@@ -2,7 +2,7 @@ services:
 
   irbankmock:
     container_name: irbankmock
-    image: ghcr.io/abramad-labs/irbankmock:0.0.1-r3
+    image: ghcr.io/abramad-labs/irbankmock:0.0.9-r1
     restart: unless-stopped
     ports:
       - 13000:3000
