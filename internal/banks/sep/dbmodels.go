@@ -15,7 +15,7 @@ type BankSepTransaction struct {
 	ID uint64 `gorm:"primarykey"`
 
 	// the merchant/termianl ID
-	TerminalId uint64          `gorm:"index:,unique,composite:terminal_resnum_idx"`
+	TerminalId int64           `gorm:"index:,unique,composite:terminal_resnum_idx"`
 	Terminal   BankSepTerminal `gorm:"foreignKey:TerminalId"`
 
 	// amount of payment in IRR

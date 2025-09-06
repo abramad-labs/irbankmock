@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -139,7 +138,7 @@ func processTransactionRequest(ctx *fiber.Ctx, req *BankSepTransactionRequest) (
 
 	token := uuid.NewString()
 
-	terminalId, err := strconv.ParseUint(req.TerminalId, 10, 64)
+	terminalId, err := req.TerminalId.Int64()
 	if err != nil {
 		return nil, seperrors.ErrTerminalNotFound
 	}

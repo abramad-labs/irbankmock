@@ -1,6 +1,9 @@
 package sep
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type BankSepGetTerminalsResponseEndpoints struct {
 	PaymentGateway     string `json:"paymentGateway"`
@@ -36,7 +39,7 @@ type BankSepTransactionRequest struct {
 	Action string `json:"action"`
 
 	// the merchant/termianl ID
-	TerminalId string `json:"terminalId"`
+	TerminalId json.Number `json:"terminalId"`
 
 	// amount of payment in IRR
 	Amount int64 `json:"amount"`
@@ -192,7 +195,7 @@ type BankSepGetReceiptResponse struct {
 
 type BankSepPublicTokenInfoResponse struct {
 	TerminalName string    `json:"terminalName"`
-	TerminalId   uint64    `json:"terminalId"`
+	TerminalId   int64     `json:"terminalId"`
 	Website      string    `json:"website"`
 	Amount       int64     `json:"amount"`
 	ExpiresAt    time.Time `json:"expiresAt"`
