@@ -17,6 +17,7 @@ import (
 	"github.com/abramad-labs/irbankmock/internal/banks/sep/seperrors"
 	"github.com/abramad-labs/irbankmock/internal/conf"
 	"github.com/abramad-labs/irbankmock/internal/dbutils"
+	"github.com/abramad-labs/irbankmock/internal/pointers"
 	"github.com/abramad-labs/irbankmock/internal/security"
 	"github.com/abramad-labs/irbankmock/internal/usererror"
 	"github.com/gofiber/fiber/v2"
@@ -461,17 +462,23 @@ func getReceipt(c *fiber.Ctx, terminalId int64, refNum *string, token *string, r
 	}
 	return &BankSepGetReceiptResponse{
 		Data: BankSepPaymentReceipt{
-			State:            tx.Status.GetState(),
-			Status:           tx.Status,
-			TerminalId:       int64(tx.TerminalId),
-			Token:            tx.Token,
-			RefNum:           *tx.RefNum,
-			ResNum:           tx.ResNum,
-			TraceNo:          int64(*tx.TraceNo),
-			Amount:           int64(tx.Amount),
-			AffectiveAmount:  *tx.AffectiveAmount,
-			Rrn:              *tx.Rrn,
-			HashedCardNumber: *tx.HashedCardNumber,
+			State:      tx.Status.GetState(),
+			Status:     tx.Status,
+			TerminalId: int64(tx.TerminalId),
+			Token:      tx.Token,
+			RefNum:     pointers.DerefZero(tx.RefNum),
+			ResNum:     tx.ResNum,
+			TraceNo:    pointers.DerefZero(tx.TraceNo),
+			Amount:     int64(tx.Amount),
+			AffectiveAmount: func() int64 {
+				v := pointers.DerefZero(tx.AffectiveAmount)
+				if v == 0 {
+					return tx.Amount
+				}
+				return v
+			}(),
+			Rrn:              pointers.DerefZero(tx.Rrn),
+			HashedCardNumber: pointers.DerefZero(tx.HashedCardNumber),
 		},
 	}, nil
 }
@@ -506,7 +513,7 @@ func verifyTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSepV
 	}
 
 	var btx BankSepTransaction
-	err = db.Model(&BankSepTransaction{}).Where("id = ? and ref_num = ?", terminalId, refNum).Take(&btx).Error
+	err = db.Model(&BankSepTransaction{}).Where("terminal_id = ? and ref_num = ?", terminalId, refNum).Take(&btx).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return &BankSepVerificationResponse{
@@ -626,7 +633,7 @@ func reverseTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSep
 	}
 
 	var btx BankSepTransaction
-	err = db.Model(&BankSepTransaction{}).Where("id = ? and ref_num = ?", terminalId, refNum).Take(&btx).Error
+	err = db.Model(&BankSepTransaction{}).Where("terminal_id = ? and ref_num = ?", terminalId, refNum).Take(&btx).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return &BankSepReverseResponse{
