@@ -251,7 +251,7 @@ type BankSepTransactionDetailResponse struct {
 	OriginalAmount  int64
 	AffectiveAmount int64
 	StraceDate      time.Time
-	StraceNo        int64
+	StraceNo        string
 }
 
 type BankSepVerificationResponse struct {

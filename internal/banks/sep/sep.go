@@ -589,9 +589,9 @@ func verifyTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSepV
 		ResultDescription: "عملیات با موفقیت انجام شد.",
 		TransactionDetail: &BankSepTransactionDetailResponse{
 			RRN:            fmt.Sprint(btx.Rrn),
-			RefNum:         *btx.RefNum,
+			RefNum:         pointers.DerefZero(btx.RefNum),
 			MaskedPan:      maskThirdQuarter(*btx.PaidCardNumber),
-			HashedPan:      *btx.HashedCardNumber,
+			HashedPan:      pointers.DerefZero(btx.HashedCardNumber),
 			TerminalNumber: int32(btx.TerminalId),
 			OriginalAmount: int64(btx.Amount),
 			AffectiveAmount: func() int64 {
@@ -601,8 +601,8 @@ func verifyTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSepV
 					return *btx.AffectiveAmount
 				}
 			}(),
-			StraceDate: *btx.TraceDate,
-			StraceNo:   *btx.TraceNo,
+			StraceDate: pointers.DerefZero(btx.TraceDate),
+			StraceNo:   fmt.Sprint(pointers.DerefZero(btx.TraceNo)),
 		},
 	}, nil
 }
@@ -709,9 +709,9 @@ func reverseTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSep
 		ResultDescription: "عملیات با موفقیت انجام شد.",
 		TransactionDetail: &BankSepTransactionDetailResponse{
 			RRN:            fmt.Sprint(btx.Rrn),
-			RefNum:         *btx.RefNum,
+			RefNum:         pointers.DerefZero(btx.RefNum),
 			MaskedPan:      maskThirdQuarter(*btx.PaidCardNumber),
-			HashedPan:      *btx.HashedCardNumber,
+			HashedPan:      pointers.DerefZero(btx.HashedCardNumber),
 			TerminalNumber: int32(btx.TerminalId),
 			OriginalAmount: int64(btx.Amount),
 			AffectiveAmount: func() int64 {
@@ -721,8 +721,8 @@ func reverseTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSep
 					return *btx.AffectiveAmount
 				}
 			}(),
-			StraceDate: *btx.TraceDate,
-			StraceNo:   *btx.TraceNo,
+			StraceDate: pointers.DerefZero(btx.TraceDate),
+			StraceNo:   fmt.Sprint(pointers.DerefZero(btx.TraceNo)),
 		},
 	}, nil
 }
