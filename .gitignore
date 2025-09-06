@@ -21,6 +21,7 @@
 # vendor/
 
 # Embeded DB
+irbankmock-data
 irbankmock.db
 
 **/*.trace

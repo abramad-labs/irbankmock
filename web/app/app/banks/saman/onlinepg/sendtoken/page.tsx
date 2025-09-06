@@ -32,7 +32,7 @@ import {
 import { AxiosError } from "axios";
 import { intervalToDuration, parseISO } from "date-fns";
 import { useSearchParams } from "next/navigation";
-import { ChangeEventHandler, useEffect, useState } from "react";
+import { ChangeEventHandler, Suspense, useEffect, useState } from "react";
 import { MdOutlineMoneyOff } from "react-icons/md";
 import useSWR from "swr";
 
@@ -484,13 +484,9 @@ const RedirectPageView = ({
                     <Grid templateColumns="repeat(2, 1fr)">
                         <GridItem>
                             <Heading size="md">Terminal ID</Heading>
-                            <Text mb={2}>
-                                {cb.terminalId}
-                            </Text>
+                            <Text mb={2}>{cb.terminalId}</Text>
                             <Heading size="md">Amount</Heading>
-                            <Text mb={2}>
-                                {cb.amount}
-                            </Text>
+                            <Text mb={2}>{cb.amount}</Text>
                             <Heading size="md">Card</Heading>
                             <Text mb={2}>{cb.securePan}</Text>
                             <Heading size="md">Reference Num</Heading>
@@ -526,17 +522,19 @@ export default function Home() {
     const setFinalizeResponseCallback = (
         resp: BankSepTokenFinalizeResponse
     ) => {
-        setTokenFinalizeResponse(resp, );
+        setTokenFinalizeResponse(resp);
     };
 
     useEffect(() => {
-        if(tokenFinalizeResponse) {
-            setPageMode("redirect")
+        if (tokenFinalizeResponse) {
+            setPageMode("redirect");
         }
-    }, [tokenFinalizeResponse])
+    }, [tokenFinalizeResponse]);
 
     return pageMode === "input" ? (
-        <BankInputForm setFinalizeResponse={setFinalizeResponseCallback} />
+        <Suspense>
+            <BankInputForm setFinalizeResponse={setFinalizeResponseCallback} />
+        </Suspense>
     ) : tokenFinalizeResponse ? (
         <RedirectPageView tokenFinalizeResponse={tokenFinalizeResponse} />
     ) : (

@@ -1,0 +1,24 @@
+services:
+
+  irbankmock:
+    container_name: irbankmock
+    image: ghcr.io/abramad-labs/irbankmock:0.0.1-r3
+    restart: unless-stopped
+    ports:
+      - 13000:3000
+    volumes:
+      - irbankmock-data:/opt/irbankmock/data
+    networks:
+      - irbankmock_network
+
+networks:  
+  irbankmock_network:
+    driver: bridge  
+
+volumes:  
+  irbankmock-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUMES_ROOT:-.}/irbankmock-data
+      o: bind

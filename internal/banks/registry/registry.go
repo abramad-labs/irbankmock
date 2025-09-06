@@ -4,6 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const RegistryBanksPrefix = "/banks/"
+
 type routerPrefixType struct{}
 
 var routerPrefixKey routerPrefixType
@@ -28,7 +30,7 @@ func Cleanup() {
 
 func ConfigAppRouters(app *fiber.Group) {
 	for _, entry := range banks {
-		grpPath := "/banks/" + entry.Name
+		grpPath := RegistryBanksPrefix + entry.Name
 		grp := app.Group(grpPath)
 		grp.Use(func(c *fiber.Ctx) error {
 			c.Locals(routerPrefixKey, grpPath)

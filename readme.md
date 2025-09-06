@@ -16,7 +16,17 @@ Visit [conf.go](./internal/conf/conf.go) to see which environment variables are 
 
 ## Deploy with Docker
 
-Soon ™
+```sh
+docker run -v "irbankmock-data:/opt/irbankmock/data" --rm -p 13000:3000 ghcr.io/abramad-labs/irbankmock:0.0.1-r3
+```
+
+### Deploy with Compose
+
+Download `docker-compose.yml` from this repository and then execute:
+
+```
+docker compose up -d
+```
 
 ## Security Considerations
 

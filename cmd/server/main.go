@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strings"
 	"text/tabwriter"
 
 	_ "github.com/abramad-labs/irbankmock/internal/banks"
@@ -39,8 +40,20 @@ func main() {
 		ErrorHandler:  fibererror.FiberUserErrorHandling,
 	})
 
+	var staticNext func(*fiber.Ctx) bool
+	if !app.Config().CaseSensitive {
+		staticNext = func(c *fiber.Ctx) bool {
+			path := c.Path()
+			if strings.HasPrefix(path, registry.RegistryBanksPrefix) {
+				c.Path(strings.ToLower(path))
+			}
+			return false
+		}
+	}
+
 	app.Static("/", conf.GetWebAppPath(), fiber.Static{
 		Browse: false,
+		Next:   staticNext,
 	})
 	app.Use(func(c *fiber.Ctx) error {
 		c = dbutils.ContextWithDb(c, db)
