@@ -469,7 +469,7 @@ func getReceipt(c *fiber.Ctx, terminalId int64, refNum *string, token *string, r
 			ResNum:           tx.ResNum,
 			TraceNo:          int64(*tx.TraceNo),
 			Amount:           int64(tx.Amount),
-			AffectiveAmount:  int64(*tx.AffectiveAmount),
+			AffectiveAmount:  *tx.AffectiveAmount,
 			Rrn:              *tx.Rrn,
 			HashedCardNumber: *tx.HashedCardNumber,
 		},
