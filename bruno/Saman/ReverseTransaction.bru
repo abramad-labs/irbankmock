@@ -1,0 +1,18 @@
+meta {
+  name: ReverseTransaction
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/banks/saman/verifyTxnRandomSessionkey/ipg/ReverseTransaction
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "terminalNumber": 1,
+    "refNum": "VMD6mkqDuTVRlJz6jLu89"
+  }
+}

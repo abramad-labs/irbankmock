@@ -1,0 +1,18 @@
+meta {
+  name: VerifyTransaction
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://{{IRBANKMOCK_SERVER}}:{{IRBANKMOCK_PORT}}/banks/saman/verifyTxnRandomSessionkey/ipg/VerifyTransaction
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "terminalNumber": 1,
+    "refNum": "VMD6mkqDuTVRlJz6jLu89"
+  }
+}
