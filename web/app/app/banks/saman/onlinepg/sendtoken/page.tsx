@@ -409,6 +409,12 @@ const RedirectPageView = ({
                                     name="AffectiveAmount"
                                     value={cb.affectiveAmount}
                                 />
+                                {/*
+                                    The typo in `OrginalAmount` is intended and originally roots back
+                                    to the older versions of the SEP document.
+                                    They removed this key from the newer versions
+                                    but we kept it due to compatibility reasons.
+                                 */}
                                 <input
                                     type="hidden"
                                     name="OrginalAmount"

@@ -248,7 +248,7 @@ type BankSepTransactionDetailResponse struct {
 	MaskedPan       string
 	HashedPan       string
 	TerminalNumber  int32
-	OriginalAmount  int64
+	OrginalAmount   int64 /* the typo in `Original` comes from the bank side, not irbankmock */
 	AffectiveAmount int64
 	StraceDate      time.Time
 	StraceNo        string

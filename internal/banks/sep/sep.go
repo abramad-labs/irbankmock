@@ -593,7 +593,7 @@ func verifyTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSepV
 			MaskedPan:      maskThirdQuarter(*btx.PaidCardNumber),
 			HashedPan:      pointers.DerefZero(btx.HashedCardNumber),
 			TerminalNumber: int32(btx.TerminalId),
-			OriginalAmount: int64(btx.Amount),
+			OrginalAmount:  int64(btx.Amount),
 			AffectiveAmount: func() int64 {
 				if btx.AffectiveAmount == nil {
 					return btx.Amount
@@ -713,7 +713,7 @@ func reverseTransaction(c *fiber.Ctx, terminalId int64, refNum string) (*BankSep
 			MaskedPan:      maskThirdQuarter(*btx.PaidCardNumber),
 			HashedPan:      pointers.DerefZero(btx.HashedCardNumber),
 			TerminalNumber: int32(btx.TerminalId),
-			OriginalAmount: int64(btx.Amount),
+			OrginalAmount:  int64(btx.Amount),
 			AffectiveAmount: func() int64 {
 				if btx.AffectiveAmount == nil {
 					return btx.Amount
