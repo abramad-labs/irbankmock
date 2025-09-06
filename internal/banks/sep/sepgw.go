@@ -1,6 +1,7 @@
 package sep
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -78,7 +79,8 @@ func PaymentGwTransaction(c *fiber.Ctx) error {
 	txReq := new(BankSepTransactionRequest)
 	err := c.BodyParser(txReq)
 	if err != nil {
-		return sendJsonFromSamanError(c, seperrors.ErrXInvalidRequest, fiber.StatusBadRequest)
+		wErr := fmt.Errorf("%w: %w", seperrors.ErrXInvalidRequest, err)
+		return sendJsonFromSamanError(c, wErr, fiber.StatusBadRequest)
 	}
 	resp, err := processTransactionRequest(c, txReq)
 	if err != nil {
