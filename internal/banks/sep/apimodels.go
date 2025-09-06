@@ -111,7 +111,7 @@ type BankSepRedirectedPayload struct {
 }
 
 type BankSepGetReceiptBaseRequest struct {
-	TerminalNumber int64
+	TerminalNumber json.Number
 
 	// only required if this value is provided while requesting token.
 	// must match the token's random session key.
@@ -239,7 +239,7 @@ type BankSepTokenFinalizeResponse struct {
 
 type BankSepVerificationRequest struct {
 	RefNum         string
-	TerminalNumber int64
+	TerminalNumber json.Number
 }
 
 type BankSepTransactionDetailResponse struct {

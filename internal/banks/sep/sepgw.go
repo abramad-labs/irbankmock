@@ -145,7 +145,15 @@ func GetReceipt(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	resp, err := getReceipt(c, req.TerminalNumber, req.RefNum, req.Token, req.TxnRandomSessionKey, req.Rrn)
+	terminalNum, err := req.TerminalNumber.Int64()
+	if err != nil {
+		return c.JSON(&BankSepGetReceiptResponse{
+			HasError:     true,
+			ErrorCode:    -1,
+			ErrorMessage: err.Error(),
+		})
+	}
+	resp, err := getReceipt(c, terminalNum, req.RefNum, req.Token, req.TxnRandomSessionKey, req.Rrn)
 	if err != nil {
 		return err
 	}
@@ -158,7 +166,15 @@ func VerifyTransaction(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	resp, err := verifyTransaction(c, req.TerminalNumber, req.RefNum)
+	terminalNum, err := req.TerminalNumber.Int64()
+	if err != nil {
+		return c.JSON(&BankSepVerificationResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: err.Error(),
+		})
+	}
+	resp, err := verifyTransaction(c, terminalNum, req.RefNum)
 	if err != nil {
 		return err
 	}
@@ -171,7 +187,15 @@ func ReverseTransaction(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	resp, err := reverseTransaction(c, req.TerminalNumber, req.RefNum)
+	terminalNum, err := req.TerminalNumber.Int64()
+	if err != nil {
+		return c.JSON(&BankSepReverseResponse{
+			Success:           false,
+			ResultCode:        -1,
+			ResultDescription: err.Error(),
+		})
+	}
+	resp, err := reverseTransaction(c, terminalNum, req.RefNum)
 	if err != nil {
 		return err
 	}
