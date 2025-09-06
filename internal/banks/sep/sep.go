@@ -264,6 +264,8 @@ func cancelToken(c *fiber.Ctx, req *BankSepCancelOrFailTokenRequest) (*BankSepTo
 			MID:        fmt.Sprint(btrx.TerminalId),
 			TerminalId: fmt.Sprint(btrx.TerminalId),
 			Token:      req.Token,
+			State:      string(PaymentReceiptStateCanceledByUser),
+			Status:     fmt.Sprint(PaymentReceiptStatusCanceledByUser),
 		},
 	}, nil
 }
@@ -311,6 +313,8 @@ func failToken(c *fiber.Ctx, req *BankSepCancelOrFailTokenRequest) (*BankSepToke
 			MID:        fmt.Sprint(btrx.TerminalId),
 			TerminalId: fmt.Sprint(btrx.TerminalId),
 			Token:      req.Token,
+			State:      string(PaymentReceiptStateFailed),
+			Status:     fmt.Sprint(PaymentReceiptStatusFailed),
 		},
 	}, nil
 }
@@ -386,8 +390,8 @@ func submitToken(c *fiber.Ctx, req *BankSepSubmitTokenRequest) (*BankSepTokenFin
 			Token:            req.Token,
 			RefNum:           refNum,
 			Rrn:              fmt.Sprint(rrn),
-			State:            string(btrx.Status.GetState()),
-			Status:           fmt.Sprint(btrx.Status),
+			State:            string(PaymentReceiptStateOK),
+			Status:           fmt.Sprint(PaymentReceiptStatusOK),
 			ResNum:           btrx.ResNum,
 			Amount:           fmt.Sprint(btrx.Amount),
 			HashedCardNumber: hashedCardNumber,
