@@ -411,6 +411,11 @@ const RedirectPageView = ({
                                 />
                                 <input
                                     type="hidden"
+                                    name="OrginalAmount"
+                                    value={cb.amount}
+                                />
+                                <input
+                                    type="hidden"
                                     name="Amount"
                                     value={cb.amount}
                                 />
